@@ -63,6 +63,10 @@ void Error_Handler(void);
 #define PC15_OSC32_OUT_GPIO_Port GPIOC
 #define SEG14_Pin GPIO_PIN_0
 #define SEG14_GPIO_Port GPIOC
+#define SEG15_Pin GPIO_PIN_1
+#define SEG15_GPIO_Port GPIOC
+#define SEG16_Pin GPIO_PIN_2
+#define SEG16_GPIO_Port GPIOC
 #define SEG17_Pin GPIO_PIN_3
 #define SEG17_GPIO_Port GPIOC
 #define B1_Pin GPIO_PIN_0
@@ -99,6 +103,14 @@ void Error_Handler(void);
 #define SEG10_GPIO_Port GPIOB
 #define SEG11_Pin GPIO_PIN_15
 #define SEG11_GPIO_Port GPIOB
+#define SEG18_Pin GPIO_PIN_6
+#define SEG18_GPIO_Port GPIOC
+#define SEG19_Pin GPIO_PIN_7
+#define SEG19_GPIO_Port GPIOC
+#define SEG20_Pin GPIO_PIN_8
+#define SEG20_GPIO_Port GPIOC
+#define SEG21_Pin GPIO_PIN_9
+#define SEG21_GPIO_Port GPIOC
 #define COM0_Pin GPIO_PIN_8
 #define COM0_GPIO_Port GPIOA
 #define COM1_Pin GPIO_PIN_9
@@ -125,6 +137,8 @@ void Error_Handler(void);
 #define LD4_GPIO_Port GPIOB
 #define LD3_Pin GPIO_PIN_7
 #define LD3_GPIO_Port GPIOB
+#define SEG13_Pin GPIO_PIN_8
+#define SEG13_GPIO_Port GPIOB
 #define COM3_Pin GPIO_PIN_9
 #define COM3_GPIO_Port GPIOB
 

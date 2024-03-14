@@ -21,7 +21,7 @@
 
 /* Private includes ----------------------------------------------------------*/
 /* USER CODE BEGIN Includes */
-
+#include "stm32l1xx_hal.h"
 /* USER CODE END Includes */
 
 /* Private typedef -----------------------------------------------------------*/
@@ -31,12 +31,11 @@
 
 /* Private define ------------------------------------------------------------*/
 /* USER CODE BEGIN PD */
+// Define GPIO pins connected to the motor driver
 #define MOTOR_A_IN1_PIN GPIO_PIN_6 // PC6
 #define MOTOR_A_IN2_PIN GPIO_PIN_7 // PC7
 #define MOTOR_B_IN3_PIN GPIO_PIN_8 // PC8
 #define MOTOR_B_IN4_PIN GPIO_PIN_9 // PC9
-#define BUZZER_PIN GPIO_PIN_8 // PB8
-
 /* USER CODE END PD */
 
 /* Private macro -------------------------------------------------------------*/
@@ -49,14 +48,8 @@ ADC_HandleTypeDef hadc;
 
 LCD_HandleTypeDef hlcd;
 
-TIM_HandleTypeDef htim4;
-
 /* USER CODE BEGIN PV */
-unsigned char IR_SENSOR_1_STATE = 0; // 0 for white 1 for black
-unsigned char IR_SENSOR_2_STATE = 0;
-unsigned char state = 0; //0 for stop, 1 for forward, 2 for right, 3 for left, 4 for backward
-unsigned char numero = 0;
-unsigned char tiempo =0;
+
 /* USER CODE END PV */
 
 /* Private function prototypes -----------------------------------------------*/
@@ -65,17 +58,24 @@ static void MX_GPIO_Init(void);
 static void MX_ADC_Init(void);
 static void MX_LCD_Init(void);
 static void MX_TS_Init(void);
-static void MX_TIM4_Init(void);
 /* USER CODE BEGIN PFP */
-
+void stopWheels(void);
+void moveForward(void);
+void turnRight(void);
+void turnLeft(void);
+void moveBackward(void);
+void espera(int tiempo);
 /* USER CODE END PFP */
 
 /* Private user code ---------------------------------------------------------*/
 /* USER CODE BEGIN 0 */
+
 void stopWheels(void) {
     // Stop both motors
     GPIOC->BSRR = (GPIO_PIN_6 | GPIO_PIN_7 | GPIO_PIN_8 | GPIO_PIN_9) << 16;
+    //GPIOC->BSRR = (1<<6)<<16;
 }
+
 void moveForward(void) {
     // Move both motors forward
     GPIOC->BSRR = GPIO_PIN_6 | GPIO_PIN_8;
@@ -85,54 +85,25 @@ void moveForward(void) {
 void turnRight(void) {
     // Turn right by moving right motor forward and left motor backward
     GPIOC->BSRR = GPIO_PIN_6 | GPIO_PIN_9;
-    GPIOC->BSRR = (GPIO_PIN_7) << 16;
-    GPIOC->BSRR = (GPIO_PIN_8) << 16;
+    GPIOC->BSRR = (GPIO_PIN_7 | GPIO_PIN_8) << 16;
 }
 
 void turnLeft(void) {
     // Turn left by moving left motor forward and right motor backward
     GPIOC->BSRR = GPIO_PIN_7 | GPIO_PIN_8;
-    GPIOC->BSRR = (GPIO_PIN_6) << 16;
-    GPIOC->BSRR = (GPIO_PIN_9) << 16;
+    GPIOC->BSRR = (GPIO_PIN_6 | GPIO_PIN_9) << 16;
 }
+
 void moveBackward(void) {
     // Move both motors backward
     GPIOC->BSRR = GPIO_PIN_7 | GPIO_PIN_9;
     GPIOC->BSRR = (GPIO_PIN_6 | GPIO_PIN_8) << 16;
 }
-void EXTI1_IRQHandler(void){
-	if(EXTI->PR!=0){
-		state++;
-		if(state>3)state=0;
-		EXTI->PR=0x01;
-	}
-}
-void EXTI2_IRQHandler(void){
-	if(EXTI->PR!=0){
-		state++;
-		if(state>3)state=0;
-		EXTI->PR=0x01;
-	}
-}
-void activateBuzzer(void) {
-    //Activate the buzzer
-    GPIOB->BSRR = BUZZER_PIN;
-}
-void deactivateBuzzer(void) {
-    // Deactivate the buzzer
-    GPIOB->BSRR = BUZZER_PIN << 16;
-}
-void TIM4_IRQHandler(void) {
-if ((TIM4->SR & 0x0002)!=0)
-{
-numero++; // Increase in 1 the number to be shown in the LCD
-TIM4->CCR1 += tiempo; // Update the comparison value, adding 1000 steps = 1 second
-TIM4->SR = 0x0000; // Clear all flags
-}
-}
 
-
-
+void espera(int tiempo) {
+    for (int i = 0; i < tiempo * 1000; i++) {
+    }
+}
 /* USER CODE END 0 */
 
 /**
@@ -142,7 +113,6 @@ TIM4->SR = 0x0000; // Clear all flags
 int main(void)
 {
   /* USER CODE BEGIN 1 */
-
   /* USER CODE END 1 */
 
   /* MCU Configuration--------------------------------------------------------*/
@@ -166,7 +136,6 @@ int main(void)
   MX_ADC_Init();
   MX_LCD_Init();
   MX_TS_Init();
-  MX_TIM4_Init();
   /* USER CODE BEGIN 2 */
   // PC6, PC7, PC8, and PC9 as digital outputs (01)
   GPIOC->MODER &= ~(1 << (6*2+1));
@@ -174,105 +143,52 @@ int main(void)
 
   GPIOC->MODER &= ~(1 << (7*2+1));
   GPIOC->MODER |= (1 << (7*2));
+
   GPIOC->MODER &= ~(1 << (8*2+1));
   GPIOC->MODER |= (1 << (8*2));
+
   GPIOC->MODER &= ~(1 << (9*2+1));
   GPIOC->MODER |= (1 << (9*2));
-
-  // PC1 & PC2 as digital input (00)
-  GPIOC->MODER &= ~(1 << (1*2+1));
-  GPIOC->MODER &= ~(1 << (1*2));
-  GPIOC->MODER &= ~(1 << (2*2+1));
-  GPIOC->MODER &= ~(1 << (2*2));
-
-  //Configure the EXTI1
-  EXTI->FTSR |= 0x01;                      //Set off the falling edge trigger
-  EXTI->RTSR &= ~(0x01);                   //Set on the rising edge trigger
-  SYSCFG->EXTICR[0] = 0;                   //Set the EXTI1 to PC1
-  EXTI->IMR |= 0x01;                       //Unmask the EXTI1
-  NVIC->ISER[0] |= (1 << 7);
-
-  //Configure the EXTI2
-  EXTI->FTSR |= 0x02;                      //Set off the falling edge trigger
-  EXTI->RTSR |= 0x02;                      //Set on the rising edge trigger
-  SYSCFG->EXTICR[0] = 0;               //Set the EXTI2 to PC2
-  EXTI->IMR |= 0x02;                       //Unmask the EXTI2
-  NVIC->ISER[0] |= (1 << 8);
-
-  //PC8 as digital output(01)
-  GPIOB->MODER &= ~(1 << (8*2 +1));
-  GPIOB->MODER |= (1 << (8*2));
-
-  //Config buzzer
-  GPIOB->MODER &= ~(0x03 << (8 * 2)); // Limpiar los bits
-  GPIOB->MODER |= (0x01 << (8 * 2)); // Configurar como salida
-
-  //TIMERS
-  TIM4->CR1 = 0x0000; // ARPE = 0 -> No PWM, it is TOC
-  // CEN = 0; Counter OFF
-  TIM4->CR2 = 0x0000; // Always "0" in this course
-  TIM4->SMCR = 0x0000; // Always "0" in this course
-
-  TIM4->PSC = 31999;
-  TIM4->ARR = 0xffff;
-  TIM4->CNT = 0;
-  TIM4->CCR1 = 1000;
-
-  // Output mode
-  TIM4->CCMR1 = 0x0000; // CCyS = 0 (TOC)
-  // OCyM = 000 (no external output)
-  // OCyPE = 0 (no preload)
-  TIM4->CCER = 0x0000; // CCyP = 0 (always in TOC)
-  // CCyE = 0 (external output disabled)
-
-  // Counter enabling
-  TIM4->CR1 |= 0x0001; // CEN = 1 -> Start counter
-  TIM4->EGR |= 0x0001; // UG = 1 -> Generate an update event to update all registers
-  TIM4->SR = 0; // Clear counter flags
-  // Enabling TIM4_IRQ at NVIC (position 30).
-  NVIC->ISER[0] |= (1 << 30);
-
   /* USER CODE END 2 */
 
   /* Infinite loop */
   /* USER CODE BEGIN WHILE */
   while (1)
-  {
+   {
     /* USER CODE END WHILE */
-	  if (IR_SENSOR_1_STATE == 1 || IR_SENSOR_2_STATE == 1) {
-	  	        activateBuzzer();
-	  	    } else {
-	  	        deactivateBuzzer();
-	  	    }
-	      if (IR_SENSOR_1_STATE == 1 && IR_SENSOR_2_STATE == 1) {
-	          state = 0;
-	      } else if (IR_SENSOR_1_STATE == 0 && IR_SENSOR_2_STATE == 1) {
-	          state = 3;
-	      } else if (IR_SENSOR_1_STATE == 1 && IR_SENSOR_2_STATE == 0) {
-	          state = 2;
-	      } else if (IR_SENSOR_1_STATE == 0 && IR_SENSOR_2_STATE == 0) {
-	          state = 1;
-	      } else {
-	          state = 1;
-	      }
-	        switch (state) {
-	            case 0:
-	                moveForward();
-	                break;
-	            case 1:
-	                stopWheels();
-	                break;
-	            case 2:
-	                turnLeft();
-	                break;
-	            case 3:
-	                turnRight();
-	                break;
-	            default:
-	                stopWheels();
-	                break;
+	  // Stop both wheels for 1 second
+	      stopWheels();
+	      espera(1000);
+
+	      // Move both wheels forward for 2 seconds
+	      moveForward();
+	      espera(2000);
+
+	      // Stop both wheels for 1 second
+	      stopWheels();
+	      espera(1000);
+
+	      // Turn right for 2 seconds
+	      turnRight();
+	      espera(2000);
+
+	      // Stop both wheels for 1 second
+	      stopWheels();
+	      espera(1000);
+
+	      // Turn left for 2 seconds
+	      turnLeft();
+	      espera(2000);
+
+	      // Stop both wheels for 1 second
+	      stopWheels();
+	      espera(1000);
+
+	      // Move both wheels backward for 2 seconds
+	      moveBackward();
+	      espera(2000);
     /* USER CODE BEGIN 3 */
-  }
+   }
   /* USER CODE END 3 */
 }
 
@@ -422,51 +338,6 @@ static void MX_LCD_Init(void)
 }
 
 /**
-  * @brief TIM4 Initialization Function
-  * @param None
-  * @retval None
-  */
-static void MX_TIM4_Init(void)
-{
-
-  /* USER CODE BEGIN TIM4_Init 0 */
-
-  /* USER CODE END TIM4_Init 0 */
-
-  TIM_ClockConfigTypeDef sClockSourceConfig = {0};
-  TIM_MasterConfigTypeDef sMasterConfig = {0};
-
-  /* USER CODE BEGIN TIM4_Init 1 */
-
-  /* USER CODE END TIM4_Init 1 */
-  htim4.Instance = TIM4;
-  htim4.Init.Prescaler = 0;
-  htim4.Init.CounterMode = TIM_COUNTERMODE_UP;
-  htim4.Init.Period = 65535;
-  htim4.Init.ClockDivision = TIM_CLOCKDIVISION_DIV1;
-  htim4.Init.AutoReloadPreload = TIM_AUTORELOAD_PRELOAD_DISABLE;
-  if (HAL_TIM_Base_Init(&htim4) != HAL_OK)
-  {
-    Error_Handler();
-  }
-  sClockSourceConfig.ClockSource = TIM_CLOCKSOURCE_INTERNAL;
-  if (HAL_TIM_ConfigClockSource(&htim4, &sClockSourceConfig) != HAL_OK)
-  {
-    Error_Handler();
-  }
-  sMasterConfig.MasterOutputTrigger = TIM_TRGO_RESET;
-  sMasterConfig.MasterSlaveMode = TIM_MASTERSLAVEMODE_DISABLE;
-  if (HAL_TIMEx_MasterConfigSynchronization(&htim4, &sMasterConfig) != HAL_OK)
-  {
-    Error_Handler();
-  }
-  /* USER CODE BEGIN TIM4_Init 2 */
-
-  /* USER CODE END TIM4_Init 2 */
-
-}
-
-/**
   * @brief TS Initialization Function
   * @param None
   * @retval None
@@ -504,29 +375,13 @@ static void MX_GPIO_Init(void)
   __HAL_RCC_GPIOB_CLK_ENABLE();
 
   /*Configure GPIO pin Output Level */
-  HAL_GPIO_WritePin(GPIOC, GPIO_PIN_6|GPIO_PIN_7|GPIO_PIN_8|GPIO_PIN_9, GPIO_PIN_RESET);
-
-  /*Configure GPIO pin Output Level */
   HAL_GPIO_WritePin(GPIOB, LD4_Pin|LD3_Pin, GPIO_PIN_RESET);
-
-  /*Configure GPIO pins : PC1 PC2 */
-  GPIO_InitStruct.Pin = GPIO_PIN_1|GPIO_PIN_2;
-  GPIO_InitStruct.Mode = GPIO_MODE_INPUT;
-  GPIO_InitStruct.Pull = GPIO_NOPULL;
-  HAL_GPIO_Init(GPIOC, &GPIO_InitStruct);
 
   /*Configure GPIO pin : B1_Pin */
   GPIO_InitStruct.Pin = B1_Pin;
   GPIO_InitStruct.Mode = GPIO_MODE_EVT_RISING;
   GPIO_InitStruct.Pull = GPIO_NOPULL;
   HAL_GPIO_Init(B1_GPIO_Port, &GPIO_InitStruct);
-
-  /*Configure GPIO pins : PC6 PC7 PC8 PC9 */
-  GPIO_InitStruct.Pin = GPIO_PIN_6|GPIO_PIN_7|GPIO_PIN_8|GPIO_PIN_9;
-  GPIO_InitStruct.Mode = GPIO_MODE_OUTPUT_PP;
-  GPIO_InitStruct.Pull = GPIO_NOPULL;
-  GPIO_InitStruct.Speed = GPIO_SPEED_FREQ_LOW;
-  HAL_GPIO_Init(GPIOC, &GPIO_InitStruct);
 
   /*Configure GPIO pins : LD4_Pin LD3_Pin */
   GPIO_InitStruct.Pin = LD4_Pin|LD3_Pin;

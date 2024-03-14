@@ -163,6 +163,8 @@ void HAL_LCD_MspInit(LCD_HandleTypeDef* hlcd)
     __HAL_RCC_GPIOB_CLK_ENABLE();
     /**LCD GPIO Configuration
     PC0     ------> LCD_SEG18
+    PC1     ------> LCD_SEG19
+    PC2     ------> LCD_SEG20
     PC3     ------> LCD_SEG21
     PA1     ------> LCD_SEG0
     PA2     ------> LCD_SEG1
@@ -173,6 +175,10 @@ void HAL_LCD_MspInit(LCD_HandleTypeDef* hlcd)
     PB13     ------> LCD_SEG13
     PB14     ------> LCD_SEG14
     PB15     ------> LCD_SEG15
+    PC6     ------> LCD_SEG24
+    PC7     ------> LCD_SEG25
+    PC8     ------> LCD_SEG26
+    PC9     ------> LCD_SEG27
     PA8     ------> LCD_COM0
     PA9     ------> LCD_COM1
     PA10     ------> LCD_COM2
@@ -182,9 +188,12 @@ void HAL_LCD_MspInit(LCD_HandleTypeDef* hlcd)
     PB3     ------> LCD_SEG7
     PB4     ------> LCD_SEG8
     PB5     ------> LCD_SEG9
+    PB8     ------> LCD_SEG16
     PB9     ------> LCD_COM3
     */
-    GPIO_InitStruct.Pin = SEG14_Pin|SEG17_Pin|SEG22_Pin|SEG23_Pin;
+    GPIO_InitStruct.Pin = SEG14_Pin|SEG15_Pin|SEG16_Pin|SEG17_Pin
+                          |SEG18_Pin|SEG19_Pin|SEG20_Pin|SEG21_Pin
+                          |SEG22_Pin|SEG23_Pin;
     GPIO_InitStruct.Mode = GPIO_MODE_AF_PP;
     GPIO_InitStruct.Pull = GPIO_NOPULL;
     GPIO_InitStruct.Speed = GPIO_SPEED_FREQ_LOW;
@@ -201,7 +210,7 @@ void HAL_LCD_MspInit(LCD_HandleTypeDef* hlcd)
 
     GPIO_InitStruct.Pin = SEG6_Pin|SEG7_Pin|SEG8_Pin|SEG9_Pin
                           |SEG10_Pin|SEG11_Pin|SEG3_Pin|SEG4_Pin
-                          |SEG5_Pin|COM3_Pin;
+                          |SEG5_Pin|SEG13_Pin|COM3_Pin;
     GPIO_InitStruct.Mode = GPIO_MODE_AF_PP;
     GPIO_InitStruct.Pull = GPIO_NOPULL;
     GPIO_InitStruct.Speed = GPIO_SPEED_FREQ_LOW;
@@ -233,6 +242,8 @@ void HAL_LCD_MspDeInit(LCD_HandleTypeDef* hlcd)
 
     /**LCD GPIO Configuration
     PC0     ------> LCD_SEG18
+    PC1     ------> LCD_SEG19
+    PC2     ------> LCD_SEG20
     PC3     ------> LCD_SEG21
     PA1     ------> LCD_SEG0
     PA2     ------> LCD_SEG1
@@ -243,6 +254,10 @@ void HAL_LCD_MspDeInit(LCD_HandleTypeDef* hlcd)
     PB13     ------> LCD_SEG13
     PB14     ------> LCD_SEG14
     PB15     ------> LCD_SEG15
+    PC6     ------> LCD_SEG24
+    PC7     ------> LCD_SEG25
+    PC8     ------> LCD_SEG26
+    PC9     ------> LCD_SEG27
     PA8     ------> LCD_COM0
     PA9     ------> LCD_COM1
     PA10     ------> LCD_COM2
@@ -252,70 +267,23 @@ void HAL_LCD_MspDeInit(LCD_HandleTypeDef* hlcd)
     PB3     ------> LCD_SEG7
     PB4     ------> LCD_SEG8
     PB5     ------> LCD_SEG9
+    PB8     ------> LCD_SEG16
     PB9     ------> LCD_COM3
     */
-    HAL_GPIO_DeInit(GPIOC, SEG14_Pin|SEG17_Pin|SEG22_Pin|SEG23_Pin);
+    HAL_GPIO_DeInit(GPIOC, SEG14_Pin|SEG15_Pin|SEG16_Pin|SEG17_Pin
+                          |SEG18_Pin|SEG19_Pin|SEG20_Pin|SEG21_Pin
+                          |SEG22_Pin|SEG23_Pin);
 
     HAL_GPIO_DeInit(GPIOA, SEG0_Pin|SEG1_Pin|SEG2_Pin|COM0_Pin
                           |COM1_Pin|COM2_Pin|SEG12_Pin);
 
     HAL_GPIO_DeInit(GPIOB, SEG6_Pin|SEG7_Pin|SEG8_Pin|SEG9_Pin
                           |SEG10_Pin|SEG11_Pin|SEG3_Pin|SEG4_Pin
-                          |SEG5_Pin|COM3_Pin);
+                          |SEG5_Pin|SEG13_Pin|COM3_Pin);
 
   /* USER CODE BEGIN LCD_MspDeInit 1 */
 
   /* USER CODE END LCD_MspDeInit 1 */
-  }
-
-}
-
-/**
-* @brief TIM_Base MSP Initialization
-* This function configures the hardware resources used in this example
-* @param htim_base: TIM_Base handle pointer
-* @retval None
-*/
-void HAL_TIM_Base_MspInit(TIM_HandleTypeDef* htim_base)
-{
-  if(htim_base->Instance==TIM4)
-  {
-  /* USER CODE BEGIN TIM4_MspInit 0 */
-
-  /* USER CODE END TIM4_MspInit 0 */
-    /* Peripheral clock enable */
-    __HAL_RCC_TIM4_CLK_ENABLE();
-    /* TIM4 interrupt Init */
-    HAL_NVIC_SetPriority(TIM4_IRQn, 0, 0);
-    HAL_NVIC_EnableIRQ(TIM4_IRQn);
-  /* USER CODE BEGIN TIM4_MspInit 1 */
-
-  /* USER CODE END TIM4_MspInit 1 */
-  }
-
-}
-
-/**
-* @brief TIM_Base MSP De-Initialization
-* This function freeze the hardware resources used in this example
-* @param htim_base: TIM_Base handle pointer
-* @retval None
-*/
-void HAL_TIM_Base_MspDeInit(TIM_HandleTypeDef* htim_base)
-{
-  if(htim_base->Instance==TIM4)
-  {
-  /* USER CODE BEGIN TIM4_MspDeInit 0 */
-
-  /* USER CODE END TIM4_MspDeInit 0 */
-    /* Peripheral clock disable */
-    __HAL_RCC_TIM4_CLK_DISABLE();
-
-    /* TIM4 interrupt DeInit */
-    HAL_NVIC_DisableIRQ(TIM4_IRQn);
-  /* USER CODE BEGIN TIM4_MspDeInit 1 */
-
-  /* USER CODE END TIM4_MspDeInit 1 */
   }
 
 }
