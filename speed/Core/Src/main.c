@@ -31,9 +31,7 @@
 
 /* Private define ------------------------------------------------------------*/
 /* USER CODE BEGIN PD */
-#define VELOCIDAD_MAXIMA 1000 // Valor máximo del registro ARR
-#define VELOCIDAD_MINIMA 500  // Valor mínimo del registro ARR
-#define INCREMENTO_VELOCIDAD 100 // Incremento/decremento para ajustar la velocidad
+#define MAX_SPEED 250
 
 #define MOTOR_A_IN1_PIN GPIO_PIN_6 // PC6
 #define MOTOR_A_IN2_PIN GPIO_PIN_7 // PC7
@@ -54,10 +52,9 @@ LCD_HandleTypeDef hlcd;
 TIM_HandleTypeDef htim4;
 
 /* USER CODE BEGIN PV */
-unsigned char SENSOR_1 = 0; // 0 for white 1 for black
-unsigned char SENSOR_2 = 0;
-unsigned char state;
-uint32_t velocidad_actual = VELOCIDAD_MAXIMA;
+unsigned short state=0;
+unsigned short valor = 0;
+unsigned int cspeed = MAX_SPEED;
 /* USER CODE END PV */
 
 /* Private function prototypes -----------------------------------------------*/
@@ -73,6 +70,7 @@ static void MX_TIM4_Init(void);
 
 /* Private user code ---------------------------------------------------------*/
 /* USER CODE BEGIN 0 */
+
 void moveForward(void) {
     // Move both motors forward
     GPIOC->BSRR = GPIO_PIN_6 | GPIO_PIN_8;
@@ -92,15 +90,16 @@ void TIM4_IRQHandler(void){
 	TIM4->SR &= ~(1<<1);
 }
 }
-void adjustSpeed(uint32_t potentiometer_value) {
+void adjustSpeed(unsigned short valor) {
     /* Map potentiometer value to speed range */
-    current_speed = (potentiometer_value * (MAX_SPEED - MIN_SPEED) / 4095) + MIN_SPEED;
+    cspeed = (valor * MAX_SPEED) / 4095; // Assuming the ADC resolution is 12 bits (4096 levels)
 
     /* Set the value of ARR register to adjust frequency */
-    TIM4->ARR = current_speed;
+    TIM4->ARR = cspeed;
     /* Set the value of CCR1 register to adjust duty cycle */
-    TIM4->CCR1 = current_speed / 2; // For example, set duty cycle to 50%
+    TIM4->CCR1 = cspeed / 2; // For example, set duty cycle to 50%
 }
+
 
 /* USER CODE END 0 */
 
@@ -137,22 +136,48 @@ int main(void)
   MX_TS_Init();
   MX_TIM4_Init();
   /* USER CODE BEGIN 2 */
+  // PC6, PC7, PC8, and PC9 as digital outputs (01)
+      GPIOC->MODER &= ~(1 << (6*2+1));
+      GPIOC->MODER |= (1 << (6*2));
+      GPIOC->MODER &= ~(1 << (7*2+1));
+      GPIOC->MODER |= (1 << (7*2));
+      GPIOC->MODER &= ~(1 << (8*2+1));
+      GPIOC->MODER |= (1 << (8*2));
+      GPIOC->MODER &= ~(1 << (9*2+1));
+      GPIOC->MODER |= (1 << (9*2));
+
+  //PA5 as an input(00)
+  	  GPIOA->MODER |= 0x00000001<< (5*2 + 1);
+  	  GPIOA->MODER &= ~(0x00000001<< (5*2));
+  	  GPIOA->AFR[0]|=(0x02<<(5*4));
+
+  	  ADC1->CR2 &= ~(0x00000001);
+  	  ADC1-> CR1 = 0;
+
+  	ADC1->CR2 = 0x00000412;
+  	ADC1->SQR1 = 0x00000000;
+  	ADC1->SQR5 = 0x00000004;
+  	ADC1->CR2 |= 0x00000001;
+
+  	while ((ADC1->SR&0x0040)==0);
+  	ADC1->CR2 |= 0x40000000;
 
   	  //TIMERS
-  	  TIM4->CR1 = 0x0080;
+  	   TIM4->CR1 = 0x0080;
        TIM4->CR2 = 0;
        TIM4->SMCR = 0;
 
        TIM4->CNT = 0;
        TIM4->PSC = 31999;
-       TIM4->ARR = 0xFFFF;
-       TIM4->CCR1 = 250;
+       TIM4->ARR = 99;
+       TIM4->CCR2 = 50;
 
-       TIM4->CCMR1 = 0;
+
+       TIM4->CCMR1 = 0x6800;
        TIM4->CCMR2 = 0;
        TIM4->CCER = (1<<1);
 
-       TIM4->DIER = (1<<1);
+       TIM4->DIER = 0;
 
        TIM4->EGR |= 0x0001;
        TIM4->SR = 0;
@@ -166,7 +191,9 @@ int main(void)
   while (1)
   {
     /* USER CODE END WHILE */
-
+	 valor = ADC1->DR;
+	 moveForward();
+	 adjustSpeed(valor);
     /* USER CODE BEGIN 3 */
   }
   /* USER CODE END 3 */
