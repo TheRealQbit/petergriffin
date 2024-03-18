@@ -1,0 +1,16 @@
+../Core/Src/main.c:71:6:stopWheels	4	static
+../Core/Src/main.c:75:6:moveForward	4	static
+../Core/Src/main.c:81:6:rightWheel	4	static
+../Core/Src/main.c:87:6:leftWheel	4	static
+../Core/Src/main.c:93:6:moveBackward	4	static
+../Core/Src/main.c:98:6:EXTI1_IRQHandler	4	static
+../Core/Src/main.c:106:6:EXTI2_IRQHandler	4	static
+../Core/Src/main.c:114:6:TIM4_IRQHandler	4	static
+../Core/Src/main.c:134:5:main	8	static
+../Core/Src/main.c:266:6:SystemClock_Config	96	static
+../Core/Src/main.c:320:13:MX_ADC_Init	24	static
+../Core/Src/main.c:375:13:MX_LCD_Init	8	static
+../Core/Src/main.c:412:13:MX_TIM4_Init	32	static
+../Core/Src/main.c:457:13:MX_TS_Init	4	static
+../Core/Src/main.c:478:13:MX_GPIO_Init	40	static
+../Core/Src/main.c:533:6:Error_Handler	4	static,ignoring_inline_asm

@@ -1,0 +1,13 @@
+../Core/Src/main.c:72:6:stopWheels	1
+../Core/Src/main.c:78:6:moveForward	1
+../Core/Src/main.c:84:6:turnRight	1
+../Core/Src/main.c:90:6:turnLeft	1
+../Core/Src/main.c:96:6:moveBackward	1
+../Core/Src/main.c:102:6:espera	1
+../Core/Src/main.c:111:5:main	1
+../Core/Src/main.c:206:6:SystemClock_Config	4
+../Core/Src/main.c:260:13:MX_ADC_Init	3
+../Core/Src/main.c:315:13:MX_LCD_Init	2
+../Core/Src/main.c:352:13:MX_TS_Init	1
+../Core/Src/main.c:373:13:MX_GPIO_Init	1
+../Core/Src/main.c:412:6:Error_Handler	1
