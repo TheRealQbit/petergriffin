@@ -31,6 +31,10 @@
 
 /* Private define ------------------------------------------------------------*/
 /* USER CODE BEGIN PD */
+#define VELOCIDAD_MAXIMA 1000 // Valor máximo del registro ARR
+#define VELOCIDAD_MINIMA 500  // Valor mínimo del registro ARR
+#define INCREMENTO_VELOCIDAD 100 // Incremento/decremento para ajustar la velocidad
+
 #define MOTOR_A_IN1_PIN GPIO_PIN_6 // PC6
 #define MOTOR_A_IN2_PIN GPIO_PIN_7 // PC7
 #define MOTOR_B_IN3_PIN GPIO_PIN_8 // PC8
@@ -50,7 +54,10 @@ LCD_HandleTypeDef hlcd;
 TIM_HandleTypeDef htim4;
 
 /* USER CODE BEGIN PV */
-
+unsigned char SENSOR_1 = 0; // 0 for white 1 for black
+unsigned char SENSOR_2 = 0;
+unsigned char state;
+uint32_t velocidad_actual = VELOCIDAD_MAXIMA;
 /* USER CODE END PV */
 
 /* Private function prototypes -----------------------------------------------*/
@@ -66,6 +73,11 @@ static void MX_TIM4_Init(void);
 
 /* Private user code ---------------------------------------------------------*/
 /* USER CODE BEGIN 0 */
+void moveForward(void) {
+    // Move both motors forward
+    GPIOC->BSRR = GPIO_PIN_6 | GPIO_PIN_8;
+    GPIOC->BSRR = (GPIO_PIN_7 | GPIO_PIN_9) << 16;
+}
 void TIM4_IRQHandler(void){
 	if((TIM4->SR & (1<<1))!=0){
 	if(state == 0){
@@ -80,6 +92,16 @@ void TIM4_IRQHandler(void){
 	TIM4->SR &= ~(1<<1);
 }
 }
+void adjustSpeed(uint32_t potentiometer_value) {
+    /* Map potentiometer value to speed range */
+    current_speed = (potentiometer_value * (MAX_SPEED - MIN_SPEED) / 4095) + MIN_SPEED;
+
+    /* Set the value of ARR register to adjust frequency */
+    TIM4->ARR = current_speed;
+    /* Set the value of CCR1 register to adjust duty cycle */
+    TIM4->CCR1 = current_speed / 2; // For example, set duty cycle to 50%
+}
+
 /* USER CODE END 0 */
 
 /**
@@ -115,7 +137,9 @@ int main(void)
   MX_TS_Init();
   MX_TIM4_Init();
   /* USER CODE BEGIN 2 */
-  TIM4->CR1 = 0;
+
+  	  //TIMERS
+  	  TIM4->CR1 = 0x0080;
        TIM4->CR2 = 0;
        TIM4->SMCR = 0;
 
@@ -126,7 +150,7 @@ int main(void)
 
        TIM4->CCMR1 = 0;
        TIM4->CCMR2 = 0;
-       TIM4->CCER = 0;
+       TIM4->CCER = (1<<1);
 
        TIM4->DIER = (1<<1);
 
