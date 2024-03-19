@@ -49,12 +49,15 @@ ADC_HandleTypeDef hadc;
 
 LCD_HandleTypeDef hlcd;
 
+TIM_HandleTypeDef htim2;
+TIM_HandleTypeDef htim3;
 TIM_HandleTypeDef htim4;
 
 /* USER CODE BEGIN PV */
 unsigned short state=0;
 unsigned short valor = 0;
-unsigned int cspeed = MAX_SPEED;
+unsigned int speed[5];
+
 /* USER CODE END PV */
 
 /* Private function prototypes -----------------------------------------------*/
@@ -64,40 +67,69 @@ static void MX_ADC_Init(void);
 static void MX_LCD_Init(void);
 static void MX_TS_Init(void);
 static void MX_TIM4_Init(void);
+static void MX_TIM3_Init(void);
+static void MX_TIM2_Init(void);
 /* USER CODE BEGIN PFP */
 
 /* USER CODE END PFP */
 
 /* Private user code ---------------------------------------------------------*/
 /* USER CODE BEGIN 0 */
+void Start_TIM2(void){
+TIM2 -> CR1 |= 0x0001;
+TIM2 -> EGR |= 0x0001;
+TIM2 -> SR = 0x0000;
+}
+void Start_TIM3(void){
+TIM3 -> CR1 |= 0x0001;
+TIM3 -> EGR |= 0x0001;
+TIM3 -> SR = 0;
+}
+void Stop_TIM3(void){
+TIM3 -> CR1 &= 0x0000;
+TIM3 -> EGR |= 0x0001;
+TIM3 -> SR = 0x0000;
+}
+
+void Velocity_Selector(void){
+while ((ADC1 -> SR & 0x0040)==0);//wait until the adc is ready
+ADC1->CR2 |= 0x40000000; //START CONVERSION
+while ((ADC1->SR&0x0002)==0); // WAIT UNTIL END OF CONVERSION
+valor = ADC1 -> DR; //STORE THE ADC VALUE, THEN SELECT THE 4 VELOCITIES (DUTY CY
+if((valor >=0) && (valor <= 1365)){//SLOWER CASE
+TIM3->CCR1=20;
+TIM3->CCR2=20;
+TIM3->CCR3=20;
+TIM3->CCR4=20;
+} else if ((valor > 1365) && (valor <= 2730)){//MEDIUM LOW CASE
+	TIM3->CCR1=40;
+	TIM3->CCR2=40;
+	TIM3->CCR3=40;
+	TIM3->CCR4=40;
+} else if ((valor > 2730) && (valor <= 4096)){// MEDIUM HIGH CASE
+	TIM3->CCR1=80;
+	TIM3->CCR2=80;
+	TIM3->CCR3=80;
+	TIM3->CCR4=80;
+}
+}
 
 void moveForward(void) {
     // Move both motors forward
     GPIOC->BSRR = GPIO_PIN_6 | GPIO_PIN_8;
     GPIOC->BSRR = (GPIO_PIN_7 | GPIO_PIN_9) << 16;
 }
-void TIM4_IRQHandler(void){
-	if((TIM4->SR & (1<<1))!=0){
-	if(state == 0){
-		state = 1;
-	}
-	else{
-		state = 0;
-	}
-
-	TIM4->CCR1 += 250;
-
-	TIM4->SR &= ~(1<<1);
+void TIM3_IRQHandler(void){
+// WHEN THE COMPARISON IS SUCCESSFUL
+if((TIM3 -> SR & 0x0002) != 0){
+//DEACTIVATE TRIGGER
+GPIOD -> BSRR = (1<<(2+16));
+//STARTS TIMER 2 TIC
+//STARTS ECHO RECEPTION (DONE AUTOMATICALLY)
+Start_TIM2();
+//CLEARS ITSELF
+Stop_TIM3();
 }
-}
-void adjustSpeed(unsigned short valor) {
-    /* Map potentiometer value to speed range */
-    cspeed = (valor * MAX_SPEED) / 4095; // Assuming the ADC resolution is 12 bits (4096 levels)
-
-    /* Set the value of ARR register to adjust frequency */
-    TIM4->ARR = cspeed;
-    /* Set the value of CCR1 register to adjust duty cycle */
-    TIM4->CCR1 = cspeed / 2; // For example, set duty cycle to 50%
 }
 
 
@@ -135,6 +167,8 @@ int main(void)
   MX_LCD_Init();
   MX_TS_Init();
   MX_TIM4_Init();
+  MX_TIM3_Init();
+  MX_TIM2_Init();
   /* USER CODE BEGIN 2 */
   // PC6, PC7, PC8, and PC9 as digital outputs (01)
       GPIOC->MODER &= ~(1 << (6*2+1));
@@ -151,39 +185,34 @@ int main(void)
   	  GPIOA->MODER &= ~(0x00000001<< (5*2));
   	  GPIOA->AFR[0]|=(0x02<<(5*4));
 
-  	  ADC1->CR2 &= ~(0x00000001);
-  	  ADC1-> CR1 = 0;
-
-  	ADC1->CR2 = 0x00000412;
-  	ADC1->SQR1 = 0x00000000;
-  	ADC1->SQR5 = 0x00000004;
-  	ADC1->CR2 |= 0x00000001;
-
-  	while ((ADC1->SR&0x0040)==0);
-  	ADC1->CR2 |= 0x40000000;
-
-  	  //TIMERS
-  	   TIM4->CR1 = 0x0080;
-       TIM4->CR2 = 0;
-       TIM4->SMCR = 0;
-
-       TIM4->CNT = 0;
-       TIM4->PSC = 31999;
-       TIM4->ARR = 99;
-       TIM4->CCR2 = 50;
+  	ADC1 -> CR2 &= ~(1<<1);//MAKE SURE THE POWER IS OFF
+  	ADC1 -> CR1 = 0x00000000;
+  	ADC1 -> CR2 |= 0x00000412;
+  	ADC1 -> SQR1 = 0x00000000;//I JUST WANT ONE CONVERSION
+  	ADC1 -> SQR5 = 0x00000004;
+  	ADC1 -> CR2 |= 0x00000001;//POWER ON
+  	//PWM4 INITIALIZATION
 
 
-       TIM4->CCMR1 = 0x6800;
-       TIM4->CCMR2 = 0;
-       TIM4->CCER = (1<<1);
+    NVIC->ISER[0] |= (1 << 30);
 
-       TIM4->DIER = 0;
+    TIM3 -> CR1 = 0x0000;
+    TIM3 -> CR2 = 0x0000;
+    TIM3 -> SMCR = 0x0000;
+    //WE DO NOT NEED PRESCALER
+    TIM3 -> PSC = 31999;
+    TIM3 -> CNT = 0;
+    TIM3 -> ARR = 9;
+    TIM3 -> DIER = 0x0002;
+    TIM3 -> CCMR1 = 0x0000;
+    TIM3 -> CCER = 0x0001;
+    TIM3 -> CR1 |= 0x0001;
+    TIM3 -> EGR |= 0x0001;
+    TIM3 -> SR = 0;
+    //AFTER FINISHING THE INITIALIZATION, START THE TRIGGER
+    GPIOD -> BSRR = (1<<2);
 
-       TIM4->EGR |= 0x0001;
-       TIM4->SR = 0;
-       TIM4->CR1 |= 0x0001;
-
-       NVIC->ISER[0] |= (1 << 30);
+    NVIC->ISER[0] |= (1 << 29);
   /* USER CODE END 2 */
 
   /* Infinite loop */
@@ -191,9 +220,7 @@ int main(void)
   while (1)
   {
     /* USER CODE END WHILE */
-	 valor = ADC1->DR;
-	 moveForward();
-	 adjustSpeed(valor);
+	  moveForward();
     /* USER CODE BEGIN 3 */
   }
   /* USER CODE END 3 */
@@ -341,6 +368,96 @@ static void MX_LCD_Init(void)
   /* USER CODE BEGIN LCD_Init 2 */
 
   /* USER CODE END LCD_Init 2 */
+
+}
+
+/**
+  * @brief TIM2 Initialization Function
+  * @param None
+  * @retval None
+  */
+static void MX_TIM2_Init(void)
+{
+
+  /* USER CODE BEGIN TIM2_Init 0 */
+
+  /* USER CODE END TIM2_Init 0 */
+
+  TIM_ClockConfigTypeDef sClockSourceConfig = {0};
+  TIM_MasterConfigTypeDef sMasterConfig = {0};
+
+  /* USER CODE BEGIN TIM2_Init 1 */
+
+  /* USER CODE END TIM2_Init 1 */
+  htim2.Instance = TIM2;
+  htim2.Init.Prescaler = 0;
+  htim2.Init.CounterMode = TIM_COUNTERMODE_UP;
+  htim2.Init.Period = 65535;
+  htim2.Init.ClockDivision = TIM_CLOCKDIVISION_DIV1;
+  htim2.Init.AutoReloadPreload = TIM_AUTORELOAD_PRELOAD_DISABLE;
+  if (HAL_TIM_Base_Init(&htim2) != HAL_OK)
+  {
+    Error_Handler();
+  }
+  sClockSourceConfig.ClockSource = TIM_CLOCKSOURCE_INTERNAL;
+  if (HAL_TIM_ConfigClockSource(&htim2, &sClockSourceConfig) != HAL_OK)
+  {
+    Error_Handler();
+  }
+  sMasterConfig.MasterOutputTrigger = TIM_TRGO_RESET;
+  sMasterConfig.MasterSlaveMode = TIM_MASTERSLAVEMODE_DISABLE;
+  if (HAL_TIMEx_MasterConfigSynchronization(&htim2, &sMasterConfig) != HAL_OK)
+  {
+    Error_Handler();
+  }
+  /* USER CODE BEGIN TIM2_Init 2 */
+
+  /* USER CODE END TIM2_Init 2 */
+
+}
+
+/**
+  * @brief TIM3 Initialization Function
+  * @param None
+  * @retval None
+  */
+static void MX_TIM3_Init(void)
+{
+
+  /* USER CODE BEGIN TIM3_Init 0 */
+
+  /* USER CODE END TIM3_Init 0 */
+
+  TIM_ClockConfigTypeDef sClockSourceConfig = {0};
+  TIM_MasterConfigTypeDef sMasterConfig = {0};
+
+  /* USER CODE BEGIN TIM3_Init 1 */
+
+  /* USER CODE END TIM3_Init 1 */
+  htim3.Instance = TIM3;
+  htim3.Init.Prescaler = 0;
+  htim3.Init.CounterMode = TIM_COUNTERMODE_UP;
+  htim3.Init.Period = 65535;
+  htim3.Init.ClockDivision = TIM_CLOCKDIVISION_DIV1;
+  htim3.Init.AutoReloadPreload = TIM_AUTORELOAD_PRELOAD_DISABLE;
+  if (HAL_TIM_Base_Init(&htim3) != HAL_OK)
+  {
+    Error_Handler();
+  }
+  sClockSourceConfig.ClockSource = TIM_CLOCKSOURCE_INTERNAL;
+  if (HAL_TIM_ConfigClockSource(&htim3, &sClockSourceConfig) != HAL_OK)
+  {
+    Error_Handler();
+  }
+  sMasterConfig.MasterOutputTrigger = TIM_TRGO_RESET;
+  sMasterConfig.MasterSlaveMode = TIM_MASTERSLAVEMODE_DISABLE;
+  if (HAL_TIMEx_MasterConfigSynchronization(&htim3, &sMasterConfig) != HAL_OK)
+  {
+    Error_Handler();
+  }
+  /* USER CODE BEGIN TIM3_Init 2 */
+
+  /* USER CODE END TIM3_Init 2 */
 
 }
 
