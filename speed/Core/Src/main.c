@@ -31,8 +31,7 @@
 
 /* Private define ------------------------------------------------------------*/
 /* USER CODE BEGIN PD */
-#define MAX_SPEED 250
-
+#define selection 4
 #define MOTOR_A_IN1_PIN GPIO_PIN_6 // PC6
 #define MOTOR_A_IN2_PIN GPIO_PIN_7 // PC7
 #define MOTOR_B_IN3_PIN GPIO_PIN_8 // PC8
@@ -54,10 +53,8 @@ TIM_HandleTypeDef htim3;
 TIM_HandleTypeDef htim4;
 
 /* USER CODE BEGIN PV */
-unsigned short state=0;
+unsigned int velocidades[selection + 1] = {0, 1023, 2047, 3071, 4095};
 unsigned short valor = 0;
-unsigned int speed[5];
-
 /* USER CODE END PV */
 
 /* Private function prototypes -----------------------------------------------*/
@@ -75,62 +72,43 @@ static void MX_TIM2_Init(void);
 
 /* Private user code ---------------------------------------------------------*/
 /* USER CODE BEGIN 0 */
-void Start_TIM2(void){
-TIM2 -> CR1 |= 0x0001;
-TIM2 -> EGR |= 0x0001;
-TIM2 -> SR = 0x0000;
-}
-void Start_TIM3(void){
-TIM3 -> CR1 |= 0x0001;
-TIM3 -> EGR |= 0x0001;
-TIM3 -> SR = 0;
-}
-void Stop_TIM3(void){
-TIM3 -> CR1 &= 0x0000;
-TIM3 -> EGR |= 0x0001;
-TIM3 -> SR = 0x0000;
+
+
+
+
+
+void ADC1_IRQHandler(void) {
+    if ((ADC1->SR & (1<<1)) != 0) {
+        valor = ADC1->DR; // Lee el valor del ADC
+
+    }
 }
 
-void Velocity_Selector(void){
-while ((ADC1 -> SR & 0x0040)==0);//wait until the adc is ready
-ADC1->CR2 |= 0x40000000; //START CONVERSION
-while ((ADC1->SR&0x0002)==0); // WAIT UNTIL END OF CONVERSION
-valor = ADC1 -> DR; //STORE THE ADC VALUE, THEN SELECT THE 4 VELOCITIES (DUTY CY
-if((valor >=0) && (valor <= 1365)){//SLOWER CASE
-TIM3->CCR1=20;
-TIM3->CCR2=20;
-TIM3->CCR3=20;
-TIM3->CCR4=20;
-} else if ((valor > 1365) && (valor <= 2730)){//MEDIUM LOW CASE
-	TIM3->CCR1=40;
-	TIM3->CCR2=40;
-	TIM3->CCR3=40;
-	TIM3->CCR4=40;
-} else if ((valor > 2730) && (valor <= 4096)){// MEDIUM HIGH CASE
-	TIM3->CCR1=80;
-	TIM3->CCR2=80;
-	TIM3->CCR3=80;
-	TIM3->CCR4=80;
-}
+
+void ajustarVelocidad(unsigned short valor) {
+	unsigned int velocidad = 0;
+	for(unsigned int i = 0; i<selection; i++){
+	    if(velocidades[i]<= valor && valor <=velocidades[i+1]){
+	    	if (valor <= velocidades[1]) {
+	    		        velocidad = 50;
+	    		        TIM3->CCR2 = velocidad;
+	    		        TIM3->CCR4 = velocidad;
+
+	    		    } else if (valor <= velocidades[2]) {
+	    		        velocidad = 70;
+	    		        TIM3->CCR2 = velocidad;
+	    		        TIM3->CCR4 = velocidad;
+
+	    		    } else if (valor <= velocidades[3]) {
+	    		        velocidad = 100;
+	    		        TIM3->CCR2 = velocidad;
+	    		        TIM3->CCR4 = velocidad;
+
+	    		    }
+	    }
+	}
 }
 
-void moveForward(void) {
-    // Move both motors forward
-    GPIOC->BSRR = GPIO_PIN_6 | GPIO_PIN_8;
-    GPIOC->BSRR = (GPIO_PIN_7 | GPIO_PIN_9) << 16;
-}
-void TIM3_IRQHandler(void){
-// WHEN THE COMPARISON IS SUCCESSFUL
-if((TIM3 -> SR & 0x0002) != 0){
-//DEACTIVATE TRIGGER
-GPIOD -> BSRR = (1<<(2+16));
-//STARTS TIMER 2 TIC
-//STARTS ECHO RECEPTION (DONE AUTOMATICALLY)
-Start_TIM2();
-//CLEARS ITSELF
-Stop_TIM3();
-}
-}
 
 
 /* USER CODE END 0 */
@@ -173,44 +151,69 @@ int main(void)
   // PC6, PC7, PC8, and PC9 as digital outputs (01)
       GPIOC->MODER &= ~(1 << (6*2+1));
       GPIOC->MODER |= (1 << (6*2));
-      GPIOC->MODER &= ~(1 << (7*2+1));
-      GPIOC->MODER |= (1 << (7*2));
-      GPIOC->MODER &= ~(1 << (8*2+1));
-      GPIOC->MODER |= (1 << (8*2));
-      GPIOC->MODER &= ~(1 << (9*2+1));
-      GPIOC->MODER |= (1 << (9*2));
+
+      GPIOC->MODER |= (1 << (7*2+1));
+      GPIOC->MODER &= ~(1 << (7*2));
+      GPIOC->AFR[0]=0x20000000;
+
+      GPIOC->MODER &= ~(1<<(8*2+1));
+      	GPIOC->MODER |= (1<<(8*2));
+
+
+      GPIOC->MODER 	|=  (1<<(9*2+1));
+      	GPIOC->MODER 	&= ~(1<<(9*2));
+      	GPIOC->AFR[1] = 0x00000020; //TIM3 para el PC9 (ver apuntes GPIO)
 
   //PA5 as an input(00)
-  	  GPIOA->MODER |= 0x00000001<< (5*2 + 1);
-  	  GPIOA->MODER &= ~(0x00000001<< (5*2));
-  	  GPIOA->AFR[0]|=(0x02<<(5*4));
+      GPIOA->MODER |= 0x00000C00;
 
-  	ADC1 -> CR2 &= ~(1<<1);//MAKE SURE THE POWER IS OFF
-  	ADC1 -> CR1 = 0x00000000;
-  	ADC1 -> CR2 |= 0x00000412;
+
+  	ADC1 -> CR2 &= ~(0x00000001);//MAKE SURE THE POWER IS OFF
+  	ADC1 -> CR1 = 0x00000020;
+  	ADC1 -> CR2 = 0x00000412;
   	ADC1 -> SQR1 = 0x00000000;//I JUST WANT ONE CONVERSION
-  	ADC1 -> SQR5 = 0x00000004;
+  	ADC1 -> SQR5 = 0x00000005;
   	ADC1 -> CR2 |= 0x00000001;//POWER ON
-  	//PWM4 INITIALIZATION
+  	 while ((ADC1->SR&0x0040)==0); // If ADCONS = 0, I wait till converter is ready
+  	 ADC1->CR2 |= 0x40000000;
+  	 NVIC->ISER[0] |= (1<<18);
+  	// PWM Configuration for pin PC6 and channel 1 of TIM3
+  	TIM3->CR1 = 0x0000; // Disable TIM3
+  	TIM3->CR2 = 0x0000; // Trigger mode configuration
+  	TIM3->SMCR = 0; // Synchronization control configuration
+
+  	TIM3->PSC = 319; // Prescaler configuration
+  	TIM3->CNT = 0; // Initialize counter
+  	TIM3->ARR = 99; // Auto-reload value configuration
+  	TIM3->CCR2 = 1; // Duty cycle configuration (DC debe estar definido previamente)
+  	TIM3->CCR3 = 1;
+
+  	TIM3->DIER = 0x0000; // Disable interrupts
+  	TIM3->DCR = 0;
+  	//PC7 ch2
+
+  	TIM3->CCMR1 |= (1<<(5*2+1)); // Clear channel 1 configuration bits
+	TIM3->CCMR1 |= (1<<(7*2));	//1
+	TIM3->CCMR1 |= (1<<(6*2+1));	//1
+	TIM3->CCMR1 &= ~(1<<(6*2));	//0
+	//PC9 ch4
+	TIM3->CCMR2 |= (1<<(5*2+1));	//PE
+	//Los 3 siguientes para PWM (ver manual)
+	TIM3->CCMR2 |= (1<<(7*2));	//1
+	TIM3->CCMR2 |= (1<<(6*2+1));	//1
+	TIM3->CCMR2 &= ~(1<<(6*2));	//0
 
 
-    NVIC->ISER[0] |= (1 << 30);
 
-    TIM3 -> CR1 = 0x0000;
-    TIM3 -> CR2 = 0x0000;
-    TIM3 -> SMCR = 0x0000;
-    //WE DO NOT NEED PRESCALER
-    TIM3 -> PSC = 31999;
-    TIM3 -> CNT = 0;
-    TIM3 -> ARR = 9;
-    TIM3 -> DIER = 0x0002;
-    TIM3 -> CCMR1 = 0x0000;
-    TIM3 -> CCER = 0x0001;
-    TIM3 -> CR1 |= 0x0001;
-    TIM3 -> EGR |= 0x0001;
-    TIM3 -> SR = 0;
-    //AFTER FINISHING THE INITIALIZATION, START THE TRIGGER
-    GPIOD -> BSRR = (1<<2);
+	TIM3->CCER |= (1<<(2*2));		//CC1E
+	TIM3->CCER |= (1<<(6*2));		//CC1E
+	TIM3->CR1 |= (1<<(3*2+1));		//HW (bit ARPE)
+	TIM3->EGR |= (1<<0);		//UG
+	TIM3->CR1 |= (1<<0);		//ON
+	TIM3->SR = 0;				//FLAG
+
+
+
 
     NVIC->ISER[0] |= (1 << 29);
   /* USER CODE END 2 */
@@ -220,9 +223,10 @@ int main(void)
   while (1)
   {
     /* USER CODE END WHILE */
-	  moveForward();
+	 ajustarVelocidad(valor);
     /* USER CODE BEGIN 3 */
   }
+
   /* USER CODE END 3 */
 }
 
@@ -321,7 +325,7 @@ static void MX_ADC_Init(void)
 
   /** Configure for the selected ADC regular channel its corresponding rank in the sequencer and its sample time.
   */
-  sConfig.Channel = ADC_CHANNEL_4;
+  sConfig.Channel = ADC_CHANNEL_5;
   sConfig.Rank = ADC_REGULAR_RANK_1;
   sConfig.SamplingTime = ADC_SAMPLETIME_4CYCLES;
   if (HAL_ADC_ConfigChannel(&hadc, &sConfig) != HAL_OK)
