@@ -79,13 +79,13 @@ void moveForward(void) {
 }
 
 void rightWheel(void) {
-    // Turn right by moving right motor forward and left motor backward
+    // Turn right by moving right motor forward
 	GPIOC->BSRR = GPIO_PIN_9;
 	GPIOC->BSRR = GPIO_PIN_6 | GPIO_PIN_8;
 }
 
 void leftWheel(void) {
-    // Turn left by moving left motor forward and right motor backward
+    // Turn left by moving left motor forward
 	GPIOC->BSRR = GPIO_PIN_7;
 	GPIOC->BSRR = GPIO_PIN_6 | GPIO_PIN_8;
 

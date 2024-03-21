@@ -77,7 +77,9 @@ static void MX_TIM2_Init(void);
 /* USER CODE BEGIN 0 */
 void stopWheels(void) {
     // Stop both motors
-    GPIOC->BSRR = (GPIO_PIN_6 | GPIO_PIN_7 | GPIO_PIN_8 | GPIO_PIN_9) << 16;
+    GPIOC->BSRR = (GPIO_PIN_6 | GPIO_PIN_8 ) << 16;
+
+
 }
 void moveForward(void) {
     // Move both motors forward
@@ -334,6 +336,7 @@ int main(void)
 	  if(((GPIOC->IDR&(1<<1))!=0) && ((GPIOC->IDR&(1<<2))!=0)){
 	 	  	stopWheels();
 	 	  	GPIOB->MODER = (1<<(8*2));
+
 	 	  	  }
 	 	  	  else if(((GPIOC->IDR&(1<<1))!=0) && ((GPIOC->IDR&(1<<2))==0)){
 	 	  		  rightWheel();

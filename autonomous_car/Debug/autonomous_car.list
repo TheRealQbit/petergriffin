@@ -364,10 +364,12 @@ void stopWheels(void) {
  800047c:	b480      	push	{r7}
  800047e:	af00      	add	r7, sp, #0
     // Stop both motors
-    GPIOC->BSRR = (GPIO_PIN_6 | GPIO_PIN_7 | GPIO_PIN_8 | GPIO_PIN_9) << 16;
+    GPIOC->BSRR = (GPIO_PIN_6 | GPIO_PIN_8 ) << 16;
  8000480:	4b03      	ldr	r3, [pc, #12]	; (8000490 <stopWheels+0x14>)
- 8000482:	f04f 7270 	mov.w	r2, #62914560	; 0x3c00000
+ 8000482:	f04f 72a0 	mov.w	r2, #20971520	; 0x1400000
  8000486:	619a      	str	r2, [r3, #24]
+
+
 }
  8000488:	bf00      	nop
  800048a:	46bd      	mov	sp, r7
@@ -1123,6 +1125,7 @@ int main(void)
  8000950:	f44f 3280 	mov.w	r2, #65536	; 0x10000
  8000954:	601a      	str	r2, [r3, #0]
  8000956:	e049      	b.n	80009ec <main+0x410>
+
 	 	  	  }
 	 	  	  else if(((GPIOC->IDR&(1<<1))!=0) && ((GPIOC->IDR&(1<<2))==0)){
  8000958:	4b2a      	ldr	r3, [pc, #168]	; (8000a04 <main+0x428>)
