@@ -73,13 +73,9 @@ static void MX_TIM2_Init(void);
 /* Private user code ---------------------------------------------------------*/
 /* USER CODE BEGIN 0 */
 
-
-
-
-
-void ADC1_IRQHandler(void) {
+void ADC1_IRQHandler(void) {				//Lee el valor del canal analógico y lo convierte a digital
     if ((ADC1->SR & (1<<1)) != 0) {
-        valor = ADC1->DR; // Lee el valor del ADC
+        valor = ADC1->DR; 					// Lee el valor del ADC
 
     }
 }
@@ -108,8 +104,6 @@ void ajustarVelocidad(unsigned short valor) {
 	    }
 	}
 }
-
-
 
 /* USER CODE END 0 */
 
@@ -140,82 +134,84 @@ int main(void)
   /* USER CODE END SysInit */
 
   /* Initialize all configured peripherals */
-  MX_GPIO_Init();
-  MX_ADC_Init();
-  MX_LCD_Init();
-  MX_TS_Init();
-  MX_TIM4_Init();
-  MX_TIM3_Init();
-  MX_TIM2_Init();
+  	MX_GPIO_Init();
+  	MX_ADC_Init();
+  	MX_LCD_Init();
+  	MX_TS_Init();
+  	MX_TIM4_Init();
+  	MX_TIM3_Init();
+  	MX_TIM2_Init();
   /* USER CODE BEGIN 2 */
-  // PC6, PC7, PC8, and PC9 as digital outputs (01)
-      GPIOC->MODER &= ~(1 << (6*2+1));
-      GPIOC->MODER |= (1 << (6*2));
 
-      GPIOC->MODER |= (1 << (7*2+1));
-      GPIOC->MODER &= ~(1 << (7*2));
-      GPIOC->AFR[0]=0x20000000;
+  	// PC6, PC7, PC8, and PC9 as digital outputs (01)
+  	GPIOC->MODER &= ~(1 << (6*2+1));
+    GPIOC->MODER |= (1 << (6*2));
 
-      GPIOC->MODER &= ~(1<<(8*2+1));
-      	GPIOC->MODER |= (1<<(8*2));
+    GPIOC->MODER |= (1 << (7*2+1));
+    GPIOC->MODER &= ~(1 << (7*2));
+    GPIOC->AFR[0]=0x20000000;
 
+    GPIOC->MODER &= ~(1<<(8*2+1));
+    GPIOC->MODER |= (1<<(8*2));
 
-      GPIOC->MODER 	|=  (1<<(9*2+1));
-      	GPIOC->MODER 	&= ~(1<<(9*2));
-      	GPIOC->AFR[1] = 0x00000020; //TIM3 para el PC9 (ver apuntes GPIO)
+    GPIOC->MODER 	|=  (1<<(9*2+1));
+    GPIOC->MODER 	&= ~(1<<(9*2));
 
-  //PA5 as an input(00)
-      GPIOA->MODER |= 0x00000C00;
+    //Asignar el TIM3 al pin PC9(ver apuntes GPIO)
+    GPIOC->AFR[1] = 0x00000020;
 
+    //PA5 as an input(00)
+    GPIOA->MODER |= 0x00000C00;
 
-  	ADC1 -> CR2 &= ~(0x00000001);//MAKE SURE THE POWER IS OFF
-  	ADC1 -> CR1 = 0x00000020;
-  	ADC1 -> CR2 = 0x00000412;
-  	ADC1 -> SQR1 = 0x00000000;//I JUST WANT ONE CONVERSION
-  	ADC1 -> SQR5 = 0x00000005;
-  	ADC1 -> CR2 |= 0x00000001;//POWER ON
-  	 while ((ADC1->SR&0x0040)==0); // If ADCONS = 0, I wait till converter is ready
-  	 ADC1->CR2 |= 0x40000000;
-  	 NVIC->ISER[0] |= (1<<18);
+    //Analog to digital converter 1 config
+  	ADC1 -> CR2 &= ~(0x00000001);	//ADC turn off
+  	ADC1 -> CR1 = 0x00000020;		//Delay between samples configured till the previous result has been red
+  	ADC1 -> CR2 = 0x00000412;		//EOC activated
+  	ADC1 -> SQR1 = 0x00000000;		//add just 1 channel in the sequence
+  	ADC1 -> SQR5 = 0x00000005;		//Channel is AIN5
+  	ADC1 -> CR2 |= 0x00000001;		//ADC turn on
+  	while ((ADC1->SR&0x0040)==0); 	// If ADCONS = 0, I wait till converter is ready
+  	ADC1->CR2 |= 0x40000000;		//CR2 start conversion
+  	NVIC->ISER[0] |= (1<<18);
+
   	// PWM Configuration for pin PC6 and channel 1 of TIM3
-  	TIM3->CR1 = 0x0000; // Disable TIM3
-  	TIM3->CR2 = 0x0000; // Trigger mode configuration
-  	TIM3->SMCR = 0; // Synchronization control configuration
+  	TIM3->CR1 = 0x0000; 			// Disable TIM3
+  	TIM3->CR2 = 0x0000; 			// Trigger mode configuration
+  	TIM3->SMCR = 0;					// Synchronization control configuration
 
-  	TIM3->PSC = 319; // Prescaler configuration
-  	TIM3->CNT = 0; // Initialize counter
-  	TIM3->ARR = 99; // Auto-reload value configuration
-  	TIM3->CCR2 = 1; // Duty cycle configuration (DC debe estar definido previamente)
-  	TIM3->CCR3 = 1;
+  	TIM3->PSC = 319; 				// Prescaler configuration
+  	TIM3->CNT = 0; 					// Initialize counter
+  	TIM3->ARR = 99; 				// Auto-reload value configuration
+  	TIM3->CCR2 = 1; 				// Duty cycle configuration (DC debe estar definido previamente)
+  	TIM3->CCR3 = 1;					// Configure the capture/compare register 3 in PWM mode
 
-  	TIM3->DIER = 0x0000; // Disable interrupts
-  	TIM3->DCR = 0;
+  	TIM3->DIER = 0x0000; 			// Disable interrupts
+  	TIM3->DCR = 0;					// Disable DCR
   	//PC7 ch2
 
-  	TIM3->CCMR1 |= (1<<(5*2+1)); // Clear channel 1 configuration bits
-	TIM3->CCMR1 |= (1<<(7*2));	//1
-	TIM3->CCMR1 |= (1<<(6*2+1));	//1
-	TIM3->CCMR1 &= ~(1<<(6*2));	//0
+  	TIM3->CCMR1 |= (1<<(5*2+1)); 	// Preload enable on CCMR1
+	TIM3->CCMR1 |= (1<<(7*2));		// ===============================================================
+	TIM3->CCMR1 |= (1<<(6*2+1));	// PWM with cycle starting at '0'
+	TIM3->CCMR1 &= ~(1<<(6*2));		// ===============================================================
+
 	//PC9 ch4
 	TIM3->CCMR2 |= (1<<(5*2+1));	//PE
+
 	//Los 3 siguientes para PWM (ver manual)
-	TIM3->CCMR2 |= (1<<(7*2));	//1
-	TIM3->CCMR2 |= (1<<(6*2+1));	//1
-	TIM3->CCMR2 &= ~(1<<(6*2));	//0
+	TIM3->CCMR2 |= (1<<(7*2));		// ===============================================================
+	TIM3->CCMR2 |= (1<<(6*2+1));	// PWM with cycle starting at '1'
+	TIM3->CCMR2 &= ~(1<<(6*2));		// ===============================================================
 
 
 
-	TIM3->CCER |= (1<<(2*2));		//CC1E
-	TIM3->CCER |= (1<<(6*2));		//CC1E
-	TIM3->CR1 |= (1<<(3*2+1));		//HW (bit ARPE)
-	TIM3->EGR |= (1<<0);		//UG
-	TIM3->CR1 |= (1<<0);		//ON
-	TIM3->SR = 0;				//FLAG
+	TIM3->CCER |= (1<<(2*2));		// Output enable on 2
+	TIM3->CCER |= (1<<(6*2));		// Output enable on 4
+	TIM3->CR1 |= (1<<(3*2+1));		// HW (bit ARPE)
+	TIM3->EGR |= (1<<0);			// Enable Event Generation register on TIM3
+	TIM3->CR1 |= (1<<0);			// Enable CR1
+	TIM3->SR = 0;					// Flag to 0
 
-
-
-
-    NVIC->ISER[0] |= (1 << 29);
+   NVIC->ISER[0] |= (1 << 29);
   /* USER CODE END 2 */
 
   /* Infinite loop */
