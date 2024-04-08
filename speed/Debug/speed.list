@@ -39,13 +39,13 @@ Idx Name          Size      VMA       LMA       File off  Algn
                   CONTENTS, READONLY, DEBUGGING, OCTETS
  17 .debug_macro  0001412c  00000000  00000000  0002ba8d  2**0
                   CONTENTS, READONLY, DEBUGGING, OCTETS
- 18 .debug_line   0000b05e  00000000  00000000  0003fbb9  2**0
+ 18 .debug_line   0000b060  00000000  00000000  0003fbb9  2**0
                   CONTENTS, READONLY, DEBUGGING, OCTETS
- 19 .debug_str    000807c0  00000000  00000000  0004ac17  2**0
+ 19 .debug_str    000807c0  00000000  00000000  0004ac19  2**0
                   CONTENTS, READONLY, DEBUGGING, OCTETS
- 20 .debug_frame  0000282c  00000000  00000000  000cb3d8  2**2
+ 20 .debug_frame  0000282c  00000000  00000000  000cb3dc  2**2
                   CONTENTS, READONLY, DEBUGGING, OCTETS
- 21 .debug_line_str 0000004b  00000000  00000000  000cdc04  2**0
+ 21 .debug_line_str 0000004b  00000000  00000000  000cdc08  2**0
                   CONTENTS, READONLY, DEBUGGING, OCTETS
 
 Disassembly of section .text:
@@ -355,12 +355,12 @@ Disassembly of section .text:
  800047a:	bf00      	nop
 
 0800047c <ADC1_IRQHandler>:
+/* USER CODE END PFP */
 
+/* Private user code ---------------------------------------------------------*/
+/* USER CODE BEGIN 0 */
 
-
-
-
-void ADC1_IRQHandler(void) {
+void ADC1_IRQHandler(void) {				//Lee el valor del canal analógico y lo convierte a digital
  800047c:	b480      	push	{r7}
  800047e:	af00      	add	r7, sp, #0
     if ((ADC1->SR & (1<<1)) != 0) {
@@ -369,7 +369,7 @@ void ADC1_IRQHandler(void) {
  8000484:	f003 0302 	and.w	r3, r3, #2
  8000488:	2b00      	cmp	r3, #0
  800048a:	d004      	beq.n	8000496 <ADC1_IRQHandler+0x1a>
-        valor = ADC1->DR; // Lee el valor del ADC
+        valor = ADC1->DR; 					// Lee el valor del ADC
  800048c:	4b04      	ldr	r3, [pc, #16]	; (80004a0 <ADC1_IRQHandler+0x24>)
  800048e:	6d9b      	ldr	r3, [r3, #88]	; 0x58
  8000490:	b29a      	uxth	r2, r3
@@ -520,208 +520,210 @@ int main(void)
   /* USER CODE END SysInit */
 
   /* Initialize all configured peripherals */
-  MX_GPIO_Init();
+  	MX_GPIO_Init();
  8000558:	f000 fae2 	bl	8000b20 <MX_GPIO_Init>
-  MX_ADC_Init();
+  	MX_ADC_Init();
  800055c:	f000 f964 	bl	8000828 <MX_ADC_Init>
-  MX_LCD_Init();
+  	MX_LCD_Init();
  8000560:	f000 f9bc 	bl	80008dc <MX_LCD_Init>
-  MX_TS_Init();
+  	MX_TS_Init();
  8000564:	f000 fad6 	bl	8000b14 <MX_TS_Init>
-  MX_TIM4_Init();
+  	MX_TIM4_Init();
  8000568:	f000 fa86 	bl	8000a78 <MX_TIM4_Init>
-  MX_TIM3_Init();
+  	MX_TIM3_Init();
  800056c:	f000 fa36 	bl	80009dc <MX_TIM3_Init>
-  MX_TIM2_Init();
+  	MX_TIM2_Init();
  8000570:	f000 f9e8 	bl	8000944 <MX_TIM2_Init>
   /* USER CODE BEGIN 2 */
-  // PC6, PC7, PC8, and PC9 as digital outputs (01)
-      GPIOC->MODER &= ~(1 << (6*2+1));
+
+  	// PC6, PC7, PC8, and PC9 as digital outputs (01)
+  	GPIOC->MODER &= ~(1 << (6*2+1));
  8000574:	4b72      	ldr	r3, [pc, #456]	; (8000740 <main+0x1f4>)
  8000576:	681b      	ldr	r3, [r3, #0]
  8000578:	4a71      	ldr	r2, [pc, #452]	; (8000740 <main+0x1f4>)
  800057a:	f423 5300 	bic.w	r3, r3, #8192	; 0x2000
  800057e:	6013      	str	r3, [r2, #0]
-      GPIOC->MODER |= (1 << (6*2));
+    GPIOC->MODER |= (1 << (6*2));
  8000580:	4b6f      	ldr	r3, [pc, #444]	; (8000740 <main+0x1f4>)
  8000582:	681b      	ldr	r3, [r3, #0]
  8000584:	4a6e      	ldr	r2, [pc, #440]	; (8000740 <main+0x1f4>)
  8000586:	f443 5380 	orr.w	r3, r3, #4096	; 0x1000
  800058a:	6013      	str	r3, [r2, #0]
 
-      GPIOC->MODER |= (1 << (7*2+1));
+    GPIOC->MODER |= (1 << (7*2+1));
  800058c:	4b6c      	ldr	r3, [pc, #432]	; (8000740 <main+0x1f4>)
  800058e:	681b      	ldr	r3, [r3, #0]
  8000590:	4a6b      	ldr	r2, [pc, #428]	; (8000740 <main+0x1f4>)
  8000592:	f443 4300 	orr.w	r3, r3, #32768	; 0x8000
  8000596:	6013      	str	r3, [r2, #0]
-      GPIOC->MODER &= ~(1 << (7*2));
+    GPIOC->MODER &= ~(1 << (7*2));
  8000598:	4b69      	ldr	r3, [pc, #420]	; (8000740 <main+0x1f4>)
  800059a:	681b      	ldr	r3, [r3, #0]
  800059c:	4a68      	ldr	r2, [pc, #416]	; (8000740 <main+0x1f4>)
  800059e:	f423 4380 	bic.w	r3, r3, #16384	; 0x4000
  80005a2:	6013      	str	r3, [r2, #0]
-      GPIOC->AFR[0]=0x20000000;
+    GPIOC->AFR[0]=0x20000000;
  80005a4:	4b66      	ldr	r3, [pc, #408]	; (8000740 <main+0x1f4>)
  80005a6:	f04f 5200 	mov.w	r2, #536870912	; 0x20000000
  80005aa:	621a      	str	r2, [r3, #32]
 
-      GPIOC->MODER &= ~(1<<(8*2+1));
+    GPIOC->MODER &= ~(1<<(8*2+1));
  80005ac:	4b64      	ldr	r3, [pc, #400]	; (8000740 <main+0x1f4>)
  80005ae:	681b      	ldr	r3, [r3, #0]
  80005b0:	4a63      	ldr	r2, [pc, #396]	; (8000740 <main+0x1f4>)
  80005b2:	f423 3300 	bic.w	r3, r3, #131072	; 0x20000
  80005b6:	6013      	str	r3, [r2, #0]
-      	GPIOC->MODER |= (1<<(8*2));
+    GPIOC->MODER |= (1<<(8*2));
  80005b8:	4b61      	ldr	r3, [pc, #388]	; (8000740 <main+0x1f4>)
  80005ba:	681b      	ldr	r3, [r3, #0]
  80005bc:	4a60      	ldr	r2, [pc, #384]	; (8000740 <main+0x1f4>)
  80005be:	f443 3380 	orr.w	r3, r3, #65536	; 0x10000
  80005c2:	6013      	str	r3, [r2, #0]
 
-
-      GPIOC->MODER 	|=  (1<<(9*2+1));
+    GPIOC->MODER 	|=  (1<<(9*2+1));
  80005c4:	4b5e      	ldr	r3, [pc, #376]	; (8000740 <main+0x1f4>)
  80005c6:	681b      	ldr	r3, [r3, #0]
  80005c8:	4a5d      	ldr	r2, [pc, #372]	; (8000740 <main+0x1f4>)
  80005ca:	f443 2300 	orr.w	r3, r3, #524288	; 0x80000
  80005ce:	6013      	str	r3, [r2, #0]
-      	GPIOC->MODER 	&= ~(1<<(9*2));
+    GPIOC->MODER 	&= ~(1<<(9*2));
  80005d0:	4b5b      	ldr	r3, [pc, #364]	; (8000740 <main+0x1f4>)
  80005d2:	681b      	ldr	r3, [r3, #0]
  80005d4:	4a5a      	ldr	r2, [pc, #360]	; (8000740 <main+0x1f4>)
  80005d6:	f423 2380 	bic.w	r3, r3, #262144	; 0x40000
  80005da:	6013      	str	r3, [r2, #0]
-      	GPIOC->AFR[1] = 0x00000020; //TIM3 para el PC9 (ver apuntes GPIO)
+    GPIOC->AFR[1] = 0x00000020;
  80005dc:	4b58      	ldr	r3, [pc, #352]	; (8000740 <main+0x1f4>)
  80005de:	2220      	movs	r2, #32
  80005e0:	625a      	str	r2, [r3, #36]	; 0x24
 
-  //PA5 as an input(00)
-      GPIOA->MODER |= 0x00000C00;
+    //PA5 as an input(00)
+    GPIOA->MODER |= 0x00000C00;
  80005e2:	4b58      	ldr	r3, [pc, #352]	; (8000744 <main+0x1f8>)
  80005e4:	681b      	ldr	r3, [r3, #0]
  80005e6:	4a57      	ldr	r2, [pc, #348]	; (8000744 <main+0x1f8>)
  80005e8:	f443 6340 	orr.w	r3, r3, #3072	; 0xc00
  80005ec:	6013      	str	r3, [r2, #0]
 
-
-  	ADC1 -> CR2 &= ~(0x00000001);//MAKE SURE THE POWER IS OFF
+    //Analog to digital converter 1 config
+  	ADC1 -> CR2 &= ~(0x00000001);	//ADC turn off
  80005ee:	4b56      	ldr	r3, [pc, #344]	; (8000748 <main+0x1fc>)
  80005f0:	689b      	ldr	r3, [r3, #8]
  80005f2:	4a55      	ldr	r2, [pc, #340]	; (8000748 <main+0x1fc>)
  80005f4:	f023 0301 	bic.w	r3, r3, #1
  80005f8:	6093      	str	r3, [r2, #8]
-  	ADC1 -> CR1 = 0x00000020;
+  	ADC1 -> CR1 = 0x00000020;		//Delay between samples configured till the previous result has been red
  80005fa:	4b53      	ldr	r3, [pc, #332]	; (8000748 <main+0x1fc>)
  80005fc:	2220      	movs	r2, #32
  80005fe:	605a      	str	r2, [r3, #4]
-  	ADC1 -> CR2 = 0x00000412;
+  	ADC1 -> CR2 = 0x00000412;		//EOC activated
  8000600:	4b51      	ldr	r3, [pc, #324]	; (8000748 <main+0x1fc>)
  8000602:	f240 4212 	movw	r2, #1042	; 0x412
  8000606:	609a      	str	r2, [r3, #8]
-  	ADC1 -> SQR1 = 0x00000000;//I JUST WANT ONE CONVERSION
+  	ADC1 -> SQR1 = 0x00000000;		//add just 1 channel in the sequence
  8000608:	4b4f      	ldr	r3, [pc, #316]	; (8000748 <main+0x1fc>)
  800060a:	2200      	movs	r2, #0
  800060c:	631a      	str	r2, [r3, #48]	; 0x30
-  	ADC1 -> SQR5 = 0x00000005;
+  	ADC1 -> SQR5 = 0x00000005;		//Channel is AIN5
  800060e:	4b4e      	ldr	r3, [pc, #312]	; (8000748 <main+0x1fc>)
  8000610:	2205      	movs	r2, #5
  8000612:	641a      	str	r2, [r3, #64]	; 0x40
-  	ADC1 -> CR2 |= 0x00000001;//POWER ON
+  	ADC1 -> CR2 |= 0x00000001;		//ADC turn on
  8000614:	4b4c      	ldr	r3, [pc, #304]	; (8000748 <main+0x1fc>)
  8000616:	689b      	ldr	r3, [r3, #8]
  8000618:	4a4b      	ldr	r2, [pc, #300]	; (8000748 <main+0x1fc>)
  800061a:	f043 0301 	orr.w	r3, r3, #1
  800061e:	6093      	str	r3, [r2, #8]
-  	 while ((ADC1->SR&0x0040)==0); // If ADCONS = 0, I wait till converter is ready
+  	while ((ADC1->SR&0x0040)==0); 	// If ADCONS = 0, I wait till converter is ready
  8000620:	bf00      	nop
  8000622:	4b49      	ldr	r3, [pc, #292]	; (8000748 <main+0x1fc>)
  8000624:	681b      	ldr	r3, [r3, #0]
  8000626:	f003 0340 	and.w	r3, r3, #64	; 0x40
  800062a:	2b00      	cmp	r3, #0
  800062c:	d0f9      	beq.n	8000622 <main+0xd6>
-  	 ADC1->CR2 |= 0x40000000;
+  	ADC1->CR2 |= 0x40000000;		//CR2 start conversion
  800062e:	4b46      	ldr	r3, [pc, #280]	; (8000748 <main+0x1fc>)
  8000630:	689b      	ldr	r3, [r3, #8]
  8000632:	4a45      	ldr	r2, [pc, #276]	; (8000748 <main+0x1fc>)
  8000634:	f043 4380 	orr.w	r3, r3, #1073741824	; 0x40000000
  8000638:	6093      	str	r3, [r2, #8]
-  	 NVIC->ISER[0] |= (1<<18);
+  	NVIC->ISER[0] |= (1<<18);
  800063a:	4b44      	ldr	r3, [pc, #272]	; (800074c <main+0x200>)
  800063c:	681b      	ldr	r3, [r3, #0]
  800063e:	4a43      	ldr	r2, [pc, #268]	; (800074c <main+0x200>)
  8000640:	f443 2380 	orr.w	r3, r3, #262144	; 0x40000
  8000644:	6013      	str	r3, [r2, #0]
+
   	// PWM Configuration for pin PC6 and channel 1 of TIM3
-  	TIM3->CR1 = 0x0000; // Disable TIM3
+  	TIM3->CR1 = 0x0000; 			// Disable TIM3
  8000646:	4b42      	ldr	r3, [pc, #264]	; (8000750 <main+0x204>)
  8000648:	2200      	movs	r2, #0
  800064a:	601a      	str	r2, [r3, #0]
-  	TIM3->CR2 = 0x0000; // Trigger mode configuration
+  	TIM3->CR2 = 0x0000; 			// Trigger mode configuration
  800064c:	4b40      	ldr	r3, [pc, #256]	; (8000750 <main+0x204>)
  800064e:	2200      	movs	r2, #0
  8000650:	605a      	str	r2, [r3, #4]
-  	TIM3->SMCR = 0; // Synchronization control configuration
+  	TIM3->SMCR = 0;					// Synchronization control configuration
  8000652:	4b3f      	ldr	r3, [pc, #252]	; (8000750 <main+0x204>)
  8000654:	2200      	movs	r2, #0
  8000656:	609a      	str	r2, [r3, #8]
 
-  	TIM3->PSC = 319; // Prescaler configuration
+  	TIM3->PSC = 319; 				// Prescaler configuration
  8000658:	4b3d      	ldr	r3, [pc, #244]	; (8000750 <main+0x204>)
  800065a:	f240 123f 	movw	r2, #319	; 0x13f
  800065e:	629a      	str	r2, [r3, #40]	; 0x28
-  	TIM3->CNT = 0; // Initialize counter
+  	TIM3->CNT = 0; 					// Initialize counter
  8000660:	4b3b      	ldr	r3, [pc, #236]	; (8000750 <main+0x204>)
  8000662:	2200      	movs	r2, #0
  8000664:	625a      	str	r2, [r3, #36]	; 0x24
-  	TIM3->ARR = 99; // Auto-reload value configuration
+  	TIM3->ARR = 99; 				// Auto-reload value configuration
  8000666:	4b3a      	ldr	r3, [pc, #232]	; (8000750 <main+0x204>)
  8000668:	2263      	movs	r2, #99	; 0x63
  800066a:	62da      	str	r2, [r3, #44]	; 0x2c
-  	TIM3->CCR2 = 1; // Duty cycle configuration (DC debe estar definido previamente)
+  	TIM3->CCR2 = 1; 				// Duty cycle configuration (DC debe estar definido previamente)
  800066c:	4b38      	ldr	r3, [pc, #224]	; (8000750 <main+0x204>)
  800066e:	2201      	movs	r2, #1
  8000670:	639a      	str	r2, [r3, #56]	; 0x38
-  	TIM3->CCR3 = 1;
+  	TIM3->CCR3 = 1;					// Configure the capture/compare register 3 in PWM mode
  8000672:	4b37      	ldr	r3, [pc, #220]	; (8000750 <main+0x204>)
  8000674:	2201      	movs	r2, #1
  8000676:	63da      	str	r2, [r3, #60]	; 0x3c
 
-  	TIM3->DIER = 0x0000; // Disable interrupts
+  	TIM3->DIER = 0x0000; 			// Disable interrupts
  8000678:	4b35      	ldr	r3, [pc, #212]	; (8000750 <main+0x204>)
  800067a:	2200      	movs	r2, #0
  800067c:	60da      	str	r2, [r3, #12]
-  	TIM3->DCR = 0;
+  	TIM3->DCR = 0;					// Disable DCR
  800067e:	4b34      	ldr	r3, [pc, #208]	; (8000750 <main+0x204>)
  8000680:	2200      	movs	r2, #0
  8000682:	649a      	str	r2, [r3, #72]	; 0x48
   	//PC7 ch2
 
-  	TIM3->CCMR1 |= (1<<(5*2+1)); // Clear channel 1 configuration bits
+  	TIM3->CCMR1 |= (1<<(5*2+1)); 	// Preload enable on CCMR1
  8000684:	4b32      	ldr	r3, [pc, #200]	; (8000750 <main+0x204>)
  8000686:	699b      	ldr	r3, [r3, #24]
  8000688:	4a31      	ldr	r2, [pc, #196]	; (8000750 <main+0x204>)
  800068a:	f443 6300 	orr.w	r3, r3, #2048	; 0x800
  800068e:	6193      	str	r3, [r2, #24]
-	TIM3->CCMR1 |= (1<<(7*2));	//1
+	TIM3->CCMR1 |= (1<<(7*2));		// ===============================================================
  8000690:	4b2f      	ldr	r3, [pc, #188]	; (8000750 <main+0x204>)
  8000692:	699b      	ldr	r3, [r3, #24]
  8000694:	4a2e      	ldr	r2, [pc, #184]	; (8000750 <main+0x204>)
  8000696:	f443 4380 	orr.w	r3, r3, #16384	; 0x4000
  800069a:	6193      	str	r3, [r2, #24]
-	TIM3->CCMR1 |= (1<<(6*2+1));	//1
+	TIM3->CCMR1 |= (1<<(6*2+1));	// PWM with cycle starting at '0'
  800069c:	4b2c      	ldr	r3, [pc, #176]	; (8000750 <main+0x204>)
  800069e:	699b      	ldr	r3, [r3, #24]
  80006a0:	4a2b      	ldr	r2, [pc, #172]	; (8000750 <main+0x204>)
  80006a2:	f443 5300 	orr.w	r3, r3, #8192	; 0x2000
  80006a6:	6193      	str	r3, [r2, #24]
-	TIM3->CCMR1 &= ~(1<<(6*2));	//0
+	TIM3->CCMR1 &= ~(1<<(6*2));		// ===============================================================
  80006a8:	4b29      	ldr	r3, [pc, #164]	; (8000750 <main+0x204>)
  80006aa:	699b      	ldr	r3, [r3, #24]
  80006ac:	4a28      	ldr	r2, [pc, #160]	; (8000750 <main+0x204>)
  80006ae:	f423 5380 	bic.w	r3, r3, #4096	; 0x1000
  80006b2:	6193      	str	r3, [r2, #24]
+
 	//PC9 ch4
 	TIM3->CCMR2 |= (1<<(5*2+1));	//PE
  80006b4:	4b26      	ldr	r3, [pc, #152]	; (8000750 <main+0x204>)
@@ -729,20 +731,21 @@ int main(void)
  80006b8:	4a25      	ldr	r2, [pc, #148]	; (8000750 <main+0x204>)
  80006ba:	f443 6300 	orr.w	r3, r3, #2048	; 0x800
  80006be:	61d3      	str	r3, [r2, #28]
+
 	//Los 3 siguientes para PWM (ver manual)
-	TIM3->CCMR2 |= (1<<(7*2));	//1
+	TIM3->CCMR2 |= (1<<(7*2));		// ===============================================================
  80006c0:	4b23      	ldr	r3, [pc, #140]	; (8000750 <main+0x204>)
  80006c2:	69db      	ldr	r3, [r3, #28]
  80006c4:	4a22      	ldr	r2, [pc, #136]	; (8000750 <main+0x204>)
  80006c6:	f443 4380 	orr.w	r3, r3, #16384	; 0x4000
  80006ca:	61d3      	str	r3, [r2, #28]
-	TIM3->CCMR2 |= (1<<(6*2+1));	//1
+	TIM3->CCMR2 |= (1<<(6*2+1));	// PWM with cycle starting at '1'
  80006cc:	4b20      	ldr	r3, [pc, #128]	; (8000750 <main+0x204>)
  80006ce:	69db      	ldr	r3, [r3, #28]
  80006d0:	4a1f      	ldr	r2, [pc, #124]	; (8000750 <main+0x204>)
  80006d2:	f443 5300 	orr.w	r3, r3, #8192	; 0x2000
  80006d6:	61d3      	str	r3, [r2, #28]
-	TIM3->CCMR2 &= ~(1<<(6*2));	//0
+	TIM3->CCMR2 &= ~(1<<(6*2));		// ===============================================================
  80006d8:	4b1d      	ldr	r3, [pc, #116]	; (8000750 <main+0x204>)
  80006da:	69db      	ldr	r3, [r3, #28]
  80006dc:	4a1c      	ldr	r2, [pc, #112]	; (8000750 <main+0x204>)
@@ -751,45 +754,42 @@ int main(void)
 
 
 
-	TIM3->CCER |= (1<<(2*2));		//CC1E
+	TIM3->CCER |= (1<<(2*2));		// Output enable on 2
  80006e4:	4b1a      	ldr	r3, [pc, #104]	; (8000750 <main+0x204>)
  80006e6:	6a1b      	ldr	r3, [r3, #32]
  80006e8:	4a19      	ldr	r2, [pc, #100]	; (8000750 <main+0x204>)
  80006ea:	f043 0310 	orr.w	r3, r3, #16
  80006ee:	6213      	str	r3, [r2, #32]
-	TIM3->CCER |= (1<<(6*2));		//CC1E
+	TIM3->CCER |= (1<<(6*2));		// Output enable on 4
  80006f0:	4b17      	ldr	r3, [pc, #92]	; (8000750 <main+0x204>)
  80006f2:	6a1b      	ldr	r3, [r3, #32]
  80006f4:	4a16      	ldr	r2, [pc, #88]	; (8000750 <main+0x204>)
  80006f6:	f443 5380 	orr.w	r3, r3, #4096	; 0x1000
  80006fa:	6213      	str	r3, [r2, #32]
-	TIM3->CR1 |= (1<<(3*2+1));		//HW (bit ARPE)
+	TIM3->CR1 |= (1<<(3*2+1));		// HW (bit ARPE)
  80006fc:	4b14      	ldr	r3, [pc, #80]	; (8000750 <main+0x204>)
  80006fe:	681b      	ldr	r3, [r3, #0]
  8000700:	4a13      	ldr	r2, [pc, #76]	; (8000750 <main+0x204>)
  8000702:	f043 0380 	orr.w	r3, r3, #128	; 0x80
  8000706:	6013      	str	r3, [r2, #0]
-	TIM3->EGR |= (1<<0);		//UG
+	TIM3->EGR |= (1<<0);			// Enable Event Generation register on TIM3
  8000708:	4b11      	ldr	r3, [pc, #68]	; (8000750 <main+0x204>)
  800070a:	695b      	ldr	r3, [r3, #20]
  800070c:	4a10      	ldr	r2, [pc, #64]	; (8000750 <main+0x204>)
  800070e:	f043 0301 	orr.w	r3, r3, #1
  8000712:	6153      	str	r3, [r2, #20]
-	TIM3->CR1 |= (1<<0);		//ON
+	TIM3->CR1 |= (1<<0);			// Enable CR1
  8000714:	4b0e      	ldr	r3, [pc, #56]	; (8000750 <main+0x204>)
  8000716:	681b      	ldr	r3, [r3, #0]
  8000718:	4a0d      	ldr	r2, [pc, #52]	; (8000750 <main+0x204>)
  800071a:	f043 0301 	orr.w	r3, r3, #1
  800071e:	6013      	str	r3, [r2, #0]
-	TIM3->SR = 0;				//FLAG
+	TIM3->SR = 0;					// Flag to 0
  8000720:	4b0b      	ldr	r3, [pc, #44]	; (8000750 <main+0x204>)
  8000722:	2200      	movs	r2, #0
  8000724:	611a      	str	r2, [r3, #16]
 
-
-
-
-    NVIC->ISER[0] |= (1 << 29);
+   NVIC->ISER[0] |= (1 << 29);
  8000726:	4b09      	ldr	r3, [pc, #36]	; (800074c <main+0x200>)
  8000728:	681b      	ldr	r3, [r3, #0]
  800072a:	4a08      	ldr	r2, [pc, #32]	; (800074c <main+0x200>)

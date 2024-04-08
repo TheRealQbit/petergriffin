@@ -156,8 +156,6 @@ int main(void)
 
     GPIOC->MODER 	|=  (1<<(9*2+1));
     GPIOC->MODER 	&= ~(1<<(9*2));
-
-    //Asignar el TIM3 al pin PC9(ver apuntes GPIO)
     GPIOC->AFR[1] = 0x00000020;
 
     //PA5 as an input(00)

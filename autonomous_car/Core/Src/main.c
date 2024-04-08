@@ -319,8 +319,8 @@ int main(void)
      	TIM3->SR = 0;				//FLAG
 
 
-     	TIM3->CCR2 = 50;
-    	TIM3->CCR4 = 50;
+     	TIM3->CCR2 = 20;
+    	TIM3->CCR4 = 20;
 
 
          NVIC->ISER[0] |= (1 << 29);
