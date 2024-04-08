@@ -18,6 +18,7 @@
 /* USER CODE END Header */
 /* Includes ------------------------------------------------------------------*/
 #include "main.h"
+#include "stm32l0xx_hal.h"
 /* Private includes ----------------------------------------------------------*/
 /* USER CODE BEGIN Includes */
 
@@ -51,10 +52,13 @@ LCD_HandleTypeDef hlcd;
 
 TIM_HandleTypeDef htim4;
 
+UART_HandleTypeDef huart1;
+
 /* USER CODE BEGIN PV */
 unsigned char SENSOR_1 = 0; // 0 for white 1 for black
 unsigned char SENSOR_2 = 0;
 unsigned char state;
+uint8_t data[6] = "      ";
 /* USER CODE END PV */
 
 /* Private function prototypes -----------------------------------------------*/
@@ -161,6 +165,8 @@ int main(void)
   MX_LCD_Init();
   MX_TS_Init();
   MX_TIM4_Init();
+  MX_USART1_UART_Init();
+
   /* USER CODE BEGIN 2 */
   // PC6, PC7, PC8, and PC9 as digital outputs (01)
     GPIOC->MODER &= ~(1 << (6*2+1));
@@ -221,6 +227,7 @@ int main(void)
 
      NVIC->ISER[0] |= (1 << 30);
 
+     HAL_UART_Receive_IT(&huart1, data, 1);
   /* USER CODE END 2 */
 
   /* Infinite loop */
@@ -525,7 +532,15 @@ static void MX_GPIO_Init(void)
 }
 
 /* USER CODE BEGIN 4 */
-
+void HAL_UART_RxCpltCallback(UART_HandleTypeDef *huart){
+    if(data[0] == '1'){                                         //do shize
+        HAL_GPIO_WritePin(GPIOB, GPIO_PIN_8, GPIO_PIN_SET);
+    }
+    else if(data[0] == '0'){
+        HAL_GPIO_WritePin(GPIOB, GPIO_PIN_8, GPIO_PIN_RESET);
+    }
+    HAL_UART_Receive_IT(&huart1, data, 1); //Reactivar RX
+}
 /* USER CODE END 4 */
 
 /**
