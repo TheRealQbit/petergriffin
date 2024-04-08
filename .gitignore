@@ -1,3 +1,4 @@
 .metadata
 STM32CubeIDE
 **/.settings/language.settings.xml
+*.o
