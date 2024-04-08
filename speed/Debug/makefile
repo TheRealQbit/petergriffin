@@ -60,8 +60,8 @@ all: main-build
 main-build: speed.elf secondary-outputs
 
 # Tool invocations
-speed.elf speed.map: $(OBJS) $(USER_OBJS) C:\STM32CubeIDE_1.14.1\speed\STM32L152RBTX_FLASH.ld makefile objects.list $(OPTIONAL_TOOL_DEPS)
-	arm-none-eabi-gcc -o "speed.elf" @"objects.list" $(USER_OBJS) $(LIBS) -mcpu=cortex-m3 -T"C:\STM32CubeIDE_1.14.1\speed\STM32L152RBTX_FLASH.ld" --specs=nosys.specs -Wl,-Map="speed.map" -Wl,--gc-sections -static --specs=nano.specs -mfloat-abi=soft -mthumb -Wl,--start-group -lc -lm -Wl,--end-group
+speed.elf speed.map: $(OBJS) $(USER_OBJS) C:\Users\yagom\CLionProjects\petergriffin\speed\STM32L152RBTX_FLASH.ld makefile objects.list $(OPTIONAL_TOOL_DEPS)
+	arm-none-eabi-gcc -o "speed.elf" @"objects.list" $(USER_OBJS) $(LIBS) -mcpu=cortex-m3 -T"C:\Users\yagom\CLionProjects\petergriffin\speed\STM32L152RBTX_FLASH.ld" --specs=nosys.specs -Wl,-Map="speed.map" -Wl,--gc-sections -static --specs=nano.specs -mfloat-abi=soft -mthumb -Wl,--start-group -lc -lm -Wl,--end-group
 	@echo 'Finished building target: $@'
 	@echo ' '
 

@@ -35,6 +35,8 @@
 #define MOTOR_B_IN3_PIN GPIO_PIN_8 // PC8
 #define MOTOR_B_IN4_PIN GPIO_PIN_9 // PC9
 #define BUZZER_PIN GPIO_PIN_8 // PB8
+#define TX GPIO_PIN_6//PB6
+#define RX GPIO_PIN_7//PB7
 /* USER CODE END PD */
 
 /* Private macro -------------------------------------------------------------*/
