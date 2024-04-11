@@ -60,8 +60,8 @@ all: main-build
 main-build: lab2_DEFINITIVO.elf secondary-outputs
 
 # Tool invocations
-lab2_DEFINITIVO.elf lab2_DEFINITIVO.map: $(OBJS) $(USER_OBJS) C:\STM32CubeIDE_1.14.1\lab2_DEFINITIVO\STM32L152RBTX_FLASH.ld makefile objects.list $(OPTIONAL_TOOL_DEPS)
-	arm-none-eabi-gcc -o "lab2_DEFINITIVO.elf" @"objects.list" $(USER_OBJS) $(LIBS) -mcpu=cortex-m3 -T"C:\STM32CubeIDE_1.14.1\lab2_DEFINITIVO\STM32L152RBTX_FLASH.ld" --specs=nosys.specs -Wl,-Map="lab2_DEFINITIVO.map" -Wl,--gc-sections -static --specs=nano.specs -mfloat-abi=soft -mthumb -Wl,--start-group -lc -lm -Wl,--end-group
+lab2_DEFINITIVO.elf lab2_DEFINITIVO.map: $(OBJS) $(USER_OBJS) C:\Users\yagom\STM32CubeIDE\workspace_1.14.1\petergriffin\lab2_DEFINITIVO\STM32L152RBTX_FLASH.ld makefile objects.list $(OPTIONAL_TOOL_DEPS)
+	arm-none-eabi-gcc -o "lab2_DEFINITIVO.elf" @"objects.list" $(USER_OBJS) $(LIBS) -mcpu=cortex-m3 -T"C:\Users\yagom\STM32CubeIDE\workspace_1.14.1\petergriffin\lab2_DEFINITIVO\STM32L152RBTX_FLASH.ld" --specs=nosys.specs -Wl,-Map="lab2_DEFINITIVO.map" -Wl,--gc-sections -static --specs=nano.specs -mfloat-abi=soft -mthumb -Wl,--start-group -lc -lm -Wl,--end-group
 	@echo 'Finished building target: $@'
 	@echo ' '
 

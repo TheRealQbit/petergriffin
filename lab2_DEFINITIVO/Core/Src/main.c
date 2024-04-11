@@ -59,7 +59,8 @@ UART_HandleTypeDef huart1;
 /* USER CODE BEGIN PV */
 unsigned char SENSOR_1 = 0; // 0 for white 1 for black
 unsigned char SENSOR_2 = 0;
-unsigned char state;
+unsigned char state; // 0 = stop, 1 = forward, 2 = right, 3 = left, 4 = backward, 5 = autonomous
+unsigned char carState = 0; // 0 = stop, 1 = forward, 2 = right, 3 = left, 4 = backward, 5 = autonomous
 unsigned int velocidades[selection + 1] = {0, 1023, 2047, 3071, 4095};
 unsigned short valor = 0;
 uint8_t data[6];
@@ -147,7 +148,7 @@ void autonomousMode(void){
 		  			            	 	 	  SENSOR_2=0;
 }
 void EXTI1_IRQHandler(void){  //for the right sensor
-	if(EXTI -> PR == (1<<1)){
+	if(EXTI -> PR == (1<<1) && carState == 5){
 		SENSOR_1 = 1;
 		EXTI -> PR |= (1<<1); // clean the flags with a 1
 	}
@@ -155,7 +156,7 @@ void EXTI1_IRQHandler(void){  //for the right sensor
 }
 
 void EXTI2_IRQHandler(void){  //for the left sensor
-	if(EXTI -> PR == (1<<2)){
+	if(EXTI -> PR == (1<<2) && carState == 5){
 		SENSOR_2 = 1;
 			EXTI -> PR |= (1<<2); //clean the flags with a 1
 		}
@@ -174,7 +175,7 @@ void TIM4_IRQHandler(void){
 	TIM4->CCR1 += 250;
 
 	TIM4->SR &= ~(1<<1);
-}
+    }
 }
 void ADC1_IRQHandler(void) {
     if ((ADC1->SR & (1<<1)) != 0) {
@@ -182,8 +183,6 @@ void ADC1_IRQHandler(void) {
 
     }
 }
-
-
 void ajustarVelocidad(unsigned short valor) {
 	unsigned int velocidad = 0;
 	for(unsigned int i = 0; i<selection; i++){
@@ -244,38 +243,42 @@ int main(void)
   MX_USART1_UART_Init();
   MX_TIM3_Init();
   /* USER CODE BEGIN 2 */
-  GPIOC->MODER &= ~(1 << (6*2+1));
+  // PC6, PC7, PC8, and PC9 as digital outputs (01)
+    GPIOC->MODER &= ~(1 << (6*2+1));
     GPIOC->MODER |= (1 << (6*2));
+    GPIOC->MODER &= ~(1 << (7*2+1));
+    GPIOC->MODER |= (1 << (7*2));
+    GPIOC->MODER &= ~(1 << (8*2+1));
+    GPIOC->MODER |= (1 << (8*2));
+    GPIOC->MODER &= ~(1 << (9*2+1));
+    GPIOC->MODER |= (1 << (9*2));
 
-    GPIOC->MODER |= (1 << (7*2+1));
-    GPIOC->MODER &= ~(1 << (7*2));
-    GPIOC->AFR[0]=0x20000000;
+    // PC1 & PC2 as digital input (00)
+    GPIOC->MODER &= ~(1 << (1*2+1));
+    GPIOC->MODER &= ~(1 << (1*2));
 
-    GPIOC->MODER &= ~(1<<(8*2+1));
-    	GPIOC->MODER |= (1<<(8*2));
+    GPIOC->MODER &= ~(1 << (2*2+1));
+    GPIOC->MODER &= ~(1 << (2*2));
 
-
-    GPIOC->MODER 	|=  (1<<(9*2+1));
-    	GPIOC->MODER 	&= ~(1<<(9*2));
-    	GPIOC->AFR[1] = 0x00000020; //TIM3 para el PC9 (ver apuntes GPIO)
-
-      // PC1 & PC2 as digital input (00)
-
-      //Configure the EXTI1
-      //Hacemos la interrupcion del primer infrarrojo
-      SYSCFG -> EXTICR[0] = 0;
-      EXTI -> IMR |= (1<<1);
-      EXTI -> RTSR |= (1<<1);
-      EXTI -> FTSR |= (1<<1);
-      NVIC->ISER[0] |= (1 << 7);  //EXTI1 posicion 7
+    //Configure the EXTI1
+    //Hacemos la interrupcion del primer infrarrojo
+    SYSCFG -> EXTICR[0] = 0;
+    EXTI -> IMR |= (1<<1);
+    EXTI -> RTSR |= (1<<1);
+    EXTI -> FTSR |= (1<<1);
+    NVIC->ISER[0] |= (1 << 7);  //EXTI1 posicion 7
 
 
-       //Configure the EXTI2
-      SYSCFG -> EXTICR[0] = 0;
-      EXTI -> IMR |= (1<<2);
-      EXTI -> RTSR |= (1<<2);
-      EXTI -> FTSR |= (1<<2);
-      NVIC->ISER[0] |= (1 << 8); //EXTI2 posicion 8
+     //Configure the EXTI2
+    SYSCFG -> EXTICR[0] = 0;
+    EXTI -> IMR |= (1<<2);
+    EXTI -> RTSR |= (1<<2);
+    EXTI -> FTSR |= (1<<2);
+    NVIC->ISER[0] |= (1 << 8); //EXTI2 posicion 8
+
+    //Configure buzzer
+    GPIOB->MODER &= ~(1 << (8 * 2));
+    GPIOB->MODER |= (1 << (8 * 2+1));
 
 
        //Configure buzzer
@@ -302,6 +305,8 @@ int main(void)
        TIM4->CR1 |= 0x0001;
 
        NVIC->ISER[0] |= (1 << 30);
+
+    HAL_UART_Receive_IT(&huart1, data, 1);
 
        //PA5 as an input(00)
              GPIOA->MODER |= 0x00000C00;
@@ -366,35 +371,58 @@ int main(void)
   /* USER CODE BEGIN WHILE */
   while (1)
   {
-    /* USER CODE END WHILE */
 	  if (HAL_UART_Receive(&huart1, data, 1, 10000) == HAL_OK) {
 		  ajustarVelocidad(valor);
 	  		  switch (data[0]) {
 	  			              case 'F':
-	  			                  moveForward();
+	  			                  carState = 1;
 	  			                  break;
 	  			              case 'S':
-	  			                  stopWheels();
+	  			            	carState = 0;
 	  			                  break;
 	  			              case 'R':
-	  			            	  rightWheel();
+	  			            	carState = 2;
 	  			            	 break;
 	  			              case 'L':
-	  			            	  leftWheel();
+	  			            	carState = 3;
 	  			            	  break;
 	  			              case 'B':
-	  			            	  moveBackward();
+	  			            	carState = 4;
 	  			            	  break;
 	  			              case 'A':
-	  			            	  autonomousMode();
+	  			            	carState = 5;
 	  			            	  break;
 	  			              default:
-	  			                  stopWheels();
+	  			            	carState = 0;
 	  			                  break;
 	  			    }
 
 
 	  	   }
+    /* USER CODE END WHILE */
+      switch (carState) {
+          case 0:
+              stopWheels();
+              break;
+          case 1:
+              moveForward();
+              break;
+          case 2:
+              rightWheel();
+              break;
+          case 3:
+              leftWheel();
+              break;
+          case 4:
+              moveBackward();
+              break;
+          case 5:
+              //autonomousMode();
+              break;
+          default:
+              stopWheels();
+              break;
+      }
     /* USER CODE BEGIN 3 */
   }
   /* USER CODE END 3 */
@@ -716,6 +744,33 @@ static void MX_GPIO_Init(void)
 }
 
 /* USER CODE BEGIN 4 */
+/*
+void HAL_UART_RxCpltCallback(UART_HandleTypeDef *huart){
+        switch (data[0]) {
+            case 'F':
+                carState = 1;
+                break;
+            case 'S':
+                carState = 0;
+                break;
+            case 'R':
+                carState = 2;
+                break;
+            case 'L':
+                carState = 3;
+                break;
+            case 'B':
+                carState = 4;
+                break;
+            case 'A':
+                carState = 5;
+                break;
+            default:
+                carState = 0;
+                break;
+        }
+    HAL_UART_Receive_IT(&huart1, data, 1); //Reactivar RX
+}*/
 /* USER CODE END 4 */
 
 /**
