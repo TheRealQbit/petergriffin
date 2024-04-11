@@ -78,8 +78,6 @@ static void MX_TIM2_Init(void);
 void stopWheels(void) {
     // Stop both motors
     GPIOC->BSRR = (GPIO_PIN_6 | GPIO_PIN_8 ) << 16;
-
-
 }
 void moveForward(void) {
     // Move both motors forward
