@@ -306,10 +306,8 @@ int main(void)
 
        NVIC->ISER[0] |= (1 << 30);
 
-    HAL_UART_Receive_IT(&huart1, data, 1);
-
        //PA5 as an input(00)
-             GPIOA->MODER |= 0x00000C00;
+       GPIOA->MODER |= 0x00000C00;
 
 
     	ADC1 -> CR2 &= ~(0x00000001);//MAKE SURE THE POWER IS OFF
@@ -372,7 +370,8 @@ int main(void)
   while (1)
   {
 	  if (HAL_UART_Receive(&huart1, data, 1, 10000) == HAL_OK) {
-		  ajustarVelocidad(valor);
+		  moveForward();
+		  //ajustarVelocidad(valor);
 	  		  switch (data[0]) {
 	  			              case 'F':
 	  			                  carState = 1;
