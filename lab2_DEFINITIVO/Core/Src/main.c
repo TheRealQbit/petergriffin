@@ -60,6 +60,7 @@ UART_HandleTypeDef huart1;
 unsigned char SENSOR_1 = 0; // 0 for white 1 for black
 unsigned char SENSOR_2 = 0;
 unsigned char state;
+unsigned char carState; //0 = manual, 1 = auto
 unsigned int velocidades[selection + 1] = {0, 1023, 2047, 3071, 4095};
 unsigned short valor = 0;
 uint8_t data[6];
@@ -87,9 +88,8 @@ void stopWheels(void) {
 
 void moveForward(void) {
     // Move both motors forward
-    GPIOC->BSRR = GPIO_PIN_8;  // Activar el pin de dirección del motor izquierdo hacia adelante
-    GPIOC->BSRR = GPIO_PIN_6;  // Activar el pin de dirección del motor derecho hacia adelante
-    GPIOC->BSRR = (GPIO_PIN_7 | GPIO_PIN_9) << 16; // Desactivar los pines de dirección opuestos
+	 GPIOC->BSRR = GPIO_PIN_6 | GPIO_PIN_8;  // Activar los pines de dirección opuestos
+	    GPIOC->BSRR = (GPIO_PIN_7 | GPIO_PIN_9) << 16;  // Desactivar los pines de dirección hacia adelante
 }
 
 void rightWheel(void) {
@@ -108,47 +108,29 @@ void leftWheel(void) {
 
 void moveBackward(void) {
     // Move both motors backward by reversing the direction logic
-    GPIOC->BSRR = GPIO_PIN_7 | GPIO_PIN_9;  // Activar los pines de dirección opuestos
-    GPIOC->BSRR = (GPIO_PIN_6 | GPIO_PIN_8) << 16;  // Desactivar los pines de dirección hacia adelante
+	 GPIOC->BSRR = GPIO_PIN_7 | GPIO_PIN_9;  // Activar los pines de dirección opuestos
+	    GPIOC->BSRR = (GPIO_PIN_6 | GPIO_PIN_8) << 16;  // Desactivar los pines de dirección hacia adelante
 }
 
 
-void autonomousMode(void){
-	if(((GPIOC->IDR&(1<<1))!=0) && ((GPIOC->IDR&(1<<2))!=0)){
-		  			            	 	 	  	stopWheels();
-		  			            	 	 	  	GPIOB->MODER = (1<<(8*2));
-
-		  			            	 	 	  	  }
-		  			            	 	 	  	  else if(((GPIOC->IDR&(1<<1))!=0) && ((GPIOC->IDR&(1<<2))==0)){
-		  			            	 	 	  		  rightWheel();
-		  			            	 	 	  		 if(state == 1){
-		  			            	 	 	  			GPIOB->MODER = (1<<(8*2));
-		  			            	 	 	  					 	  }
-		  			            	 	 	  					 	  else{
-		  			            	 	 	  					 		GPIOB->MODER = ~(1<<(8*2));
-		  			            	 	 	  					 	  }
-
-		  			            	 	 	  	  }
-		  			            	 	 	  	  else if(((GPIOC->IDR&(1<<1))==0) && ((GPIOC->IDR&(1<<2))!=0)){
-
-		  			            	 	 	  		  leftWheel();
-		  			            	 	 	  		 if(state == 1){
-		  			            	 	 	  			GPIOB->MODER = (1<<(8*2));
-		  			            	 	 	  					 	  }
-		  			            	 	 	  					 	  else{
-		  			            	 	 	  					 		GPIOB->MODER = ~(1<<(8*2));
-		  			            	 	 	  					 	  }
-		  			            	 	 	  	  }
-		  			            	 	 	  	  else if(((GPIOC->IDR&(1<<1))==0) && ((GPIOC->IDR&(1<<2))==0)){
-		  			            	 	 	  		  moveForward();
-		  			            	 	 	  		GPIOB->MODER = ~(1<<(8*2));
-		  			            	 	 	  	  }
-		  			            	 	 	  SENSOR_1=0;
-		  			            	 	 	  SENSOR_2=0;
+void autonomousMode(void) {
+		if(SENSOR_1 == 1 && SENSOR_2 == 0){
+				leftWheel();
+			} else if(SENSOR_1 == 0 && SENSOR_2 == 1){
+				rightWheel();
+			} else if(SENSOR_1 == 1 && SENSOR_2 == 1){
+				stopWheels();
+			} else if(SENSOR_1 == 0 && SENSOR_2 == 0){
+				moveForward();
+			} else {
+				stopWheels();
+			}
 }
 void EXTI1_IRQHandler(void){  //for the right sensor
 	if(EXTI -> PR == (1<<1)){
-		SENSOR_1 = 1;
+		if(carState == 1){
+			SENSOR_1 = 1;
+		}
 		EXTI -> PR |= (1<<1); // clean the flags with a 1
 	}
 
@@ -156,9 +138,11 @@ void EXTI1_IRQHandler(void){  //for the right sensor
 
 void EXTI2_IRQHandler(void){  //for the left sensor
 	if(EXTI -> PR == (1<<2)){
-		SENSOR_2 = 1;
-			EXTI -> PR |= (1<<2); //clean the flags with a 1
+		if(carState == 1){
+			SENSOR_2 = 1;
 		}
+		EXTI -> PR |= (1<<2); //clean the flags with a 1
+	}
 
 }
 
@@ -184,7 +168,7 @@ void ADC1_IRQHandler(void) {
 }
 
 
-void ajustarVelocidad(unsigned short valor) {
+void ajustarVelocidad(unsigned int valor) {
 	unsigned int velocidad = 0;
 	for(unsigned int i = 0; i<selection; i++){
 	    if(velocidades[i]<= valor && valor <=velocidades[i+1]){
@@ -247,35 +231,33 @@ int main(void)
   GPIOC->MODER &= ~(1 << (6*2+1));
     GPIOC->MODER |= (1 << (6*2));
 
-    GPIOC->MODER |= (1 << (7*2+1));
-    GPIOC->MODER &= ~(1 << (7*2));
-    GPIOC->AFR[0]=0x20000000;
+    GPIOC->MODER &= ~(1 << (7*2+1));
+        GPIOC->MODER |= (1 << (7*2));
 
     GPIOC->MODER &= ~(1<<(8*2+1));
     	GPIOC->MODER |= (1<<(8*2));
 
 
-    GPIOC->MODER 	|=  (1<<(9*2+1));
-    	GPIOC->MODER 	&= ~(1<<(9*2));
-    	GPIOC->AFR[1] = 0x00000020; //TIM3 para el PC9 (ver apuntes GPIO)
+    	GPIOC->MODER &= ~(1 << (9*2+1));
+    	    GPIOC->MODER |= (1 << (9*2));
 
       // PC1 & PC2 as digital input (00)
 
-      //Configure the EXTI1
-      //Hacemos la interrupcion del primer infrarrojo
-      SYSCFG -> EXTICR[0] = 0;
-      EXTI -> IMR |= (1<<1);
-      EXTI -> RTSR |= (1<<1);
-      EXTI -> FTSR |= (1<<1);
-      NVIC->ISER[0] |= (1 << 7);  //EXTI1 posicion 7
+    	    //Configure the EXTI1
+    	    //Hacemos la interrupcion del primer infrarrojo
+    	    SYSCFG -> EXTICR[0] = 0;
+    	    EXTI -> IMR |= (1<<1);
+    	    EXTI -> RTSR |= (1<<1);
+    	    EXTI -> FTSR |= (1<<1);
+    	    NVIC->ISER[0] |= (1 << 7);  //EXTI1 posicion 7
 
 
-       //Configure the EXTI2
-      SYSCFG -> EXTICR[0] = 0;
-      EXTI -> IMR |= (1<<2);
-      EXTI -> RTSR |= (1<<2);
-      EXTI -> FTSR |= (1<<2);
-      NVIC->ISER[0] |= (1 << 8); //EXTI2 posicion 8
+    	     //Configure the EXTI2
+    	    SYSCFG -> EXTICR[0] = 0;
+    	    EXTI -> IMR |= (1<<2);
+    	    EXTI -> RTSR |= (1<<2);
+    	    EXTI -> FTSR |= (1<<2);
+    	    NVIC->ISER[0] |= (1 << 8); //EXTI2 posicion 8
 
 
        //Configure buzzer
@@ -304,40 +286,40 @@ int main(void)
        NVIC->ISER[0] |= (1 << 30);
 
        //PA5 as an input(00)
-             GPIOA->MODER |= 0x00000C00;
+       GPIOA->MODER |= 0x00000C00;
 
 
-    	ADC1 -> CR2 &= ~(0x00000001);//MAKE SURE THE POWER IS OFF
-      	ADC1 -> CR1 = 0x00000020;
-       	ADC1 -> CR2 = 0x00000412;
-       	ADC1 -> SQR1 = 0x00000000;//I JUST WANT ONE CONVERSION
-       	ADC1 -> SQR5 = 0x00000005;
-       	ADC1 -> CR2 |= 0x00000001;//POWER ON
+       ADC1 -> CR2 &= ~(0x00000001);//MAKE SURE THE POWER IS OFF
+       ADC1 -> CR1 = 0x00000020;
+       ADC1 -> CR2 = 0x00000412;
+       ADC1 -> SQR1 = 0x00000000;//I JUST WANT ONE CONVERSION
+       ADC1 -> SQR5 = 0x00000005;
+       ADC1 -> CR2 |= 0x00000001;//POWER ON
        	 while ((ADC1->SR&0x0040)==0); // If ADCONS = 0, I wait till converter is ready
-        ADC1->CR2 |= 0x40000000;
-        NVIC->ISER[0] |= (1<<18);
+       ADC1->CR2 |= 0x40000000;
+       NVIC->ISER[0] |= (1<<18);
          	// PWM Configuration for pin PC6 and channel 1 of TIM3
-        TIM3->CR1 = 0x0000; // Disable TIM3
-       	TIM3->CR2 = 0x0000; // Trigger mode configuration
-       	TIM3->SMCR = 0; // Synchronization control configuration
+       TIM3->CR1 = 0x0000; // Disable TIM3
+       TIM3->CR2 = 0x0000; // Trigger mode configuration
+       TIM3->SMCR = 0; // Synchronization control configuration
 
-       	TIM3->PSC = 319; // Prescaler configuration
-       	TIM3->CNT = 0; // Initialize counter
-       	TIM3->ARR = 99; // Auto-reload value configuration
-       	TIM3->CCR2 = 1; // Duty cycle configuration (DC debe estar definido previamente)
-       	TIM3->CCR4 = 1;
+       TIM3->PSC = 319; // Prescaler configuration
+       TIM3->CNT = 0; // Initialize counter
+       TIM3->ARR = 99; // Auto-reload value configuration
+       TIM3->CCR2 = 1; // Duty cycle configuration (DC debe estar definido previamente)
+       TIM3->CCR4 = 1;
 
-       	TIM3->DIER = 0x0000; // Disable interrupts
-       	TIM3->DCR = 0;
+       TIM3->DIER = 0x0000; // Disable interrupts
+       TIM3->DCR = 0;
          	//PC7 ch2
 
-       	TIM3->CCMR1 |= (1<<(5*2+1)); // Clear channel 1 configuration bits
-       	TIM3->CCMR1 |= (1<<(7*2));	//1
-       	TIM3->CCMR1 |= (1<<(6*2+1));	//1
-       	TIM3->CCMR1 &= ~(1<<(6*2));	//0
-       	//PC9 ch4
-       	TIM3->CCMR2 |= (1<<(5*2+1));	//PE
-       	//Los 3 siguientes para PWM (ver manual)
+       TIM3->CCMR1 |= (1<<(5*2+1)); // Clear channel 1 configuration bits
+       TIM3->CCMR1 |= (1<<(7*2));	//1
+       TIM3->CCMR1 |= (1<<(6*2+1));	//1
+       TIM3->CCMR1 &= ~(1<<(6*2));	//0
+       //PC9 ch4
+       TIM3->CCMR2 |= (1<<(5*2+1));	//PE
+       //Los 3 siguientes para PWM (ver manual)
        	TIM3->CCMR2 |= (1<<(7*2));	//1
        	TIM3->CCMR2 |= (1<<(6*2+1));	//1
        	TIM3->CCMR2 &= ~(1<<(6*2));	//0
@@ -368,26 +350,32 @@ int main(void)
   {
     /* USER CODE END WHILE */
 	  if (HAL_UART_Receive(&huart1, data, 1, 10000) == HAL_OK) {
-		  ajustarVelocidad(valor);
 	  		  switch (data[0]) {
 	  			              case 'F':
+	  			            	  carState = 0;
 	  			                  moveForward();
 	  			                  break;
 	  			              case 'S':
+	  			            	  carState = 0;
 	  			                  stopWheels();
 	  			                  break;
 	  			              case 'R':
+	  			            	  carState = 0;
 	  			            	  rightWheel();
 	  			            	 break;
 	  			              case 'L':
+	  			            	  carState = 0;
 	  			            	  leftWheel();
 	  			            	  break;
 	  			              case 'B':
+	  			            	  carState = 0;
 	  			            	  moveBackward();
 	  			            	  break;
 	  			              case 'A':
+	  			            	  carState = 1;
 	  			            	  autonomousMode();
 	  			            	  break;
+
 	  			              default:
 	  			                  stopWheels();
 	  			                  break;
