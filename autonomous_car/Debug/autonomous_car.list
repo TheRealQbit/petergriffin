@@ -368,8 +368,6 @@ void stopWheels(void) {
  8000480:	4b03      	ldr	r3, [pc, #12]	; (8000490 <stopWheels+0x14>)
  8000482:	f04f 72a0 	mov.w	r2, #20971520	; 0x1400000
  8000486:	619a      	str	r2, [r3, #24]
-
-
 }
  8000488:	bf00      	nop
  800048a:	46bd      	mov	sp, r7

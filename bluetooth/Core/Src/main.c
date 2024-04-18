@@ -78,6 +78,25 @@ void moveForward(void) {
     GPIOC->BSRR = GPIO_PIN_6 | GPIO_PIN_8;
     GPIOC->BSRR = (GPIO_PIN_7 | GPIO_PIN_9) << 16;
 }
+void rightWheel(void) {
+    // Turn right by moving right motor forward and left motor backward
+    GPIOC->BSRR = GPIO_PIN_6;  // Activar el pin de dirección del motor izquierdo hacia adelante
+    GPIOC->BSRR = GPIO_PIN_9;  // Activar el pin de dirección del motor derecho hacia atrás
+    GPIOC->BSRR = (GPIO_PIN_7 | GPIO_PIN_8) << 16; // Desactivar los pines de dirección opuestos
+}
+
+void leftWheel(void) {
+    // Turn left by moving left motor forward and right motor backward
+    GPIOC->BSRR = GPIO_PIN_7;  // Activar el pin de dirección del motor izquierdo hacia adelante
+    GPIOC->BSRR = GPIO_PIN_8;  // Activar el pin de dirección del motor derecho hacia atrás
+    GPIOC->BSRR = (GPIO_PIN_6 | GPIO_PIN_9) << 16; // Desactivar los pines de dirección opuestos
+}
+
+void moveBackward(void) {
+    // Move both motors backward by reversing the direction logic
+	 GPIOC->BSRR = GPIO_PIN_7 | GPIO_PIN_9;  // Activar los pines de dirección opuestos
+	    GPIOC->BSRR = (GPIO_PIN_6 | GPIO_PIN_8) << 16;  // Desactivar los pines de dirección hacia adelante
+}
 
 /* USER CODE END 0 */
 
@@ -143,6 +162,15 @@ int main(void)
 	              case 'S':
 	                  stopWheels();
 	                  break;
+	              case 'R':
+             	  rightWheel();
+              	 break;
+                 case 'L':
+           	      leftWheel();
+           	     break;
+                 case 'B':
+           	     moveBackward();
+	               break;
 	              default:
 	                  // Handle any unexpected commands
 	                  break;
